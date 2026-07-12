@@ -1,0 +1,95 @@
+cabal-version: 3.4
+name: pomodoro-waybar-module-hs
+version: 0.1.0.0
+synopsis: A walking skeleton for a Pomodoro Waybar module
+description:
+  See [README.md](https://github.com/sgillespie/pomodoro-waybar-module-hs#pomodoro-waybar-module-hs) for more details.
+
+homepage: https://github.com/sgillespie/pomodoro-waybar-module-hs
+bug-reports: https://github.com/sgillespie/pomodoro-waybar-module-hs/issues
+license: MIT
+license-file: LICENSE
+author: Sean D Gillespie
+maintainer: Sean D Gillespie <sean@mistersg.net>
+copyright: 2026 Sean D Gillespie
+category: Development
+build-type: Simple
+tested-with: ghc ==9.10.*
+extra-doc-files:
+  CHANGELOG.md
+  README.md
+
+source-repository head
+  type: git
+  location: https://github.com/sgillespie/pomodoro-waybar-module-hs.git
+
+common common-options
+  build-depends:
+    base >=4.16 && <5,
+    relude,
+
+  mixins:
+    base hiding (Prelude),
+    relude (Relude as Prelude),
+    relude,
+
+  ghc-options:
+    -Wall
+    -Wcompat
+    -Widentities
+    -Wderiving-defaults
+    -Wmissing-deriving-strategies
+    -Wincomplete-uni-patterns
+    -Wredundant-constraints
+    -Wnoncanonical-monad-instances
+    -fhide-source-paths
+    -Wmissing-export-lists
+    -Wpartial-fields
+
+  default-extensions:
+    DeriveAnyClass
+    DerivingStrategies
+    LambdaCase
+    OverloadedStrings
+    RecordWildCards
+
+  default-language: GHC2021
+
+library
+  import: common-options
+  hs-source-dirs: src
+  exposed-modules:
+    Pomodoro.Waybar
+
+executable pomodoro-waybar-module-hs
+  import: common-options
+  hs-source-dirs: app
+  main-is: Main.hs
+  build-depends:
+    pomodoro-waybar-module-hs,
+    optparse-applicative,
+
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
+
+test-suite tests
+  import: common-options
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: Main.hs
+  other-modules:
+    Spec
+
+  build-depends:
+    pomodoro-waybar-module-hs,
+    hspec,
+    tasty,
+    tasty-hspec,
+
+  build-tool-depends: tasty-discover:tasty-discover
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N

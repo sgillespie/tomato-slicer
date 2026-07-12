@@ -1,0 +1,33 @@
+name: Nix Build
+
+on:
+  - push
+  - pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: cachix/install-nix-action@v31.10.6
+      with:
+        github_access_token: ${{ secrets.GITHUB_TOKEN }}
+        extra_nix_config: |
+          experimental-features = nix-command flakes
+          allow-import-from-derivation = true
+          accept-flake-config = true
+    - uses: cachix/cachix-action@v16
+      with:
+        name: pomodoro-waybar-module-hs
+        authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+    - name: Install just
+      run: nix profile install nixpkgs#just
+    - name: Build executable
+      run: just build
+    - name: Run basic checks
+      run: just check-light
+    - name: Run all checks
+      run: just check-full
