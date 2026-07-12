@@ -10,14 +10,14 @@ main :: IO ()
 main = execParser options >>= run
 
 run :: Options -> IO ()
-run opts = putTextLn ("Executable for pomodoro-waybar-module-hs: " <> show opts)
+run opts = putTextLn ("Executable for tomato-slicer: " <> show opts)
 
 options :: ParserInfo Options
 options =
   info (parser <**> helper) $
     fullDesc
-      <> progDesc "Walking skeleton for a Pomodoro Waybar module"
-      <> header "pomodoro-waybar-module-hs - Pomodoro Waybar module skeleton"
+      <> progDesc "A tomato timer for JSON-speaking status bars"
+      <> header "tomato-slicer - tomato timer status-bar module"
 
 parser :: Parser Options
 parser = Options <$> verboseOpt

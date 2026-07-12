@@ -1,12 +1,12 @@
 cabal-version: 3.4
-name: pomodoro-waybar-module-hs
+name: tomato-slicer
 version: 0.1.0.0
-synopsis: A walking skeleton for a Pomodoro Waybar module
+synopsis: A tomato timer for JSON-speaking status bars
 description:
-  See [README.md](https://github.com/sgillespie/pomodoro-waybar-module-hs#pomodoro-waybar-module-hs) for more details.
+  See [README.md](https://github.com/sgillespie/tomato-slicer#tomato-slicer) for more details.
 
-homepage: https://github.com/sgillespie/pomodoro-waybar-module-hs
-bug-reports: https://github.com/sgillespie/pomodoro-waybar-module-hs/issues
+homepage: https://github.com/sgillespie/tomato-slicer
+bug-reports: https://github.com/sgillespie/tomato-slicer/issues
 license: MIT
 license-file: LICENSE
 author: Sean D Gillespie
@@ -21,7 +21,7 @@ extra-doc-files:
 
 source-repository head
   type: git
-  location: https://github.com/sgillespie/pomodoro-waybar-module-hs.git
+  location: https://github.com/sgillespie/tomato-slicer.git
 
 common common-options
   build-depends:
@@ -59,14 +59,14 @@ library
   import: common-options
   hs-source-dirs: src
   exposed-modules:
-    Pomodoro.Waybar
+    System.Statusbar.Timer
 
-executable pomodoro-waybar-module-hs
+executable tomato-slicer
   import: common-options
   hs-source-dirs: app
   main-is: Main.hs
   build-depends:
-    pomodoro-waybar-module-hs,
+    tomato-slicer,
     optparse-applicative,
 
   ghc-options:
@@ -83,7 +83,7 @@ test-suite tests
     Spec
 
   build-depends:
-    pomodoro-waybar-module-hs,
+    tomato-slicer,
     hspec,
     tasty,
     tasty-hspec,

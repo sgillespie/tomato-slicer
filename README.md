@@ -1,8 +1,8 @@
-# Pomodoro Waybar Module
+# Tomato Slicer
 
-> An interactive pomodoro timer Waybar module in Haskell
+> A tomato timer for JSON-speaking status bars, written in Haskell
 
-[![CI](https://github.com/sgillespie/pomodoro-waybar-module-hs/actions/workflows/ci.yml/badge.svg)](https://github.com/sgillespie/pomodoro-waybar-module-hs/actions/workflows/ci.yml)
+[![CI](https://github.com/sgillespie/tomato-slicer/actions/workflows/ci.yml/badge.svg)](https://github.com/sgillespie/tomato-slicer/actions/workflows/ci.yml)
 [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## Getting started
@@ -15,8 +15,8 @@ In order to use this project, you will need:
 Clone the project:
 
 ```
-git clone https://github.com/sgillespie/pomodoro-waybar-module-hs.git
-cd pomodoro-waybar-module-hs
+git clone https://github.com/sgillespie/tomato-slicer.git
+cd tomato-slicer
 ```
 
 If using direnv, approve and load the environment:
@@ -64,7 +64,7 @@ You can also build and run directly with `cabal` from inside the dev shell.
 
 ```
 app/                          Executable entry point (Main.hs)
-src/                          Library: Pomodoro.Waybar modules
+src/                          Library: System.Statusbar modules
 test/                         Test suite
 nix/                          Flake modules (build, checks, dist, formatter)
 justfile                      Task runner recipes

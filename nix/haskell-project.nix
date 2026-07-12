@@ -26,7 +26,7 @@
     cabalProject = pkgs.haskell-nix.cabalProject' {
       src = ./..;
       compiler-nix-name = "ghc910";
-      name = "pomodoro-waybar-module-hs";
+      name = "tomato-slicer";
 
       shell = {
         tools = {

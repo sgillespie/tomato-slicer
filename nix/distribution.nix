@@ -20,12 +20,12 @@
     '';
 
     mkDistMusl = let
-      inherit (project.exes."pomodoro-waybar-module-hs".identifier) version;
+      inherit (project.exes."tomato-slicer".identifier) version;
       project = haskellProject.projectCross.musl64;
-      name = "pomodoro-waybar-module-hs-${version}-x86_64-linux";
+      name = "tomato-slicer-${version}-x86_64-linux";
     in
       pkgs.runCommand
-      "pomodoro-waybar-module-hs-musl64"
+      "tomato-slicer-musl64"
       {}
       ''
         mkdir -p $out
@@ -40,15 +40,15 @@
       '';
 
     mkDistWin64 = let
-      inherit (project.exes."pomodoro-waybar-module-hs".identifier) version;
+      inherit (project.exes."tomato-slicer".identifier) version;
       project = haskellProject.projectCross.mingwW64;
-      name = "pomodoro-waybar-module-hs-${version}-x86_64-windows";
+      name = "tomato-slicer-${version}-x86_64-windows";
       env = {
         nativeBuildInputs = [pkgs.zip];
       };
     in
       pkgs.runCommand
-      "pomodoro-waybar-module-hs-win64"
+      "tomato-slicer-win64"
       env
       ''
         mkdir -p $out

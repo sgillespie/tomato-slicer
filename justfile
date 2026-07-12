@@ -10,11 +10,11 @@ default:
 
 # Build the executable
 build:
-    nix build ".#pomodoro-waybar-module-hs:exe:pomodoro-waybar-module-hs"
+    nix build ".#tomato-slicer:exe:tomato-slicer"
 
 # Run the executable (`just run -- --help`)
 run *args:
-    nix run ".#pomodoro-waybar-module-hs:exe:pomodoro-waybar-module-hs" -- {{ args }}
+    nix run ".#tomato-slicer:exe:tomato-slicer" -- {{ args }}
 
 # Build release artifacts
 dist:
@@ -41,7 +41,7 @@ fmt-check:
 
 # Run the test suite
 test:
-    nix build ".#checks.{{ system }}.pomodoro-waybar-module-hs:test:tests"
+    nix build ".#checks.{{ system }}.tomato-slicer:test:tests"
 
 # Run basic checks
 check-light:
@@ -50,7 +50,7 @@ check-light:
       ".#checks.{{ system }}.deadnix" \
       ".#checks.{{ system }}.hlint" \
       ".#checks.{{ system }}.treefmt" \
-      ".#checks.{{ system }}.pomodoro-waybar-module-hs:test:tests"
+      ".#checks.{{ system }}.tomato-slicer:test:tests"
 
 # Run the full flake check (every check, all systems)
 check-full:

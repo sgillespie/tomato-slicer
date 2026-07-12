@@ -1,1 +1,0 @@
-module Pomodoro.Waybar () where
