@@ -18,5 +18,4 @@ specs = testGroup "(checked by Hspec)" <$> specs'
   where
     specs' :: IO [TestTree]
     specs' = do
-      prelude <- testSpecs Spec.spec_prelude
-      pure prelude
+      testSpecs Spec.spec_prelude

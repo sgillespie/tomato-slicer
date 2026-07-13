@@ -1,6 +1,6 @@
 # Tomato Slicer
 
-> A tomato timer for JSON-speaking status bars, written in Haskell
+> A tomato timer module for Waybar, written in Haskell
 
 [![CI](https://github.com/sgillespie/tomato-slicer/actions/workflows/ci.yml/badge.svg)](https://github.com/sgillespie/tomato-slicer/actions/workflows/ci.yml)
 [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)

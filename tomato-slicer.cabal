@@ -66,8 +66,8 @@ executable tomato-slicer
   hs-source-dirs: app
   main-is: Main.hs
   build-depends:
-    tomato-slicer,
     optparse-applicative,
+    tomato-slicer,
 
   ghc-options:
     -threaded
@@ -83,10 +83,10 @@ test-suite tests
     Spec
 
   build-depends:
-    tomato-slicer,
     hspec,
     tasty,
     tasty-hspec,
+    tomato-slicer,
 
   build-tool-depends: tasty-discover:tasty-discover
   ghc-options:
