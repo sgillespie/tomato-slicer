@@ -1,29 +1,33 @@
 module Main (main) where
 
-import Options.Applicative
+import Options.Applicative (Parser, ParserInfo)
+import Options.Applicative qualified as Options
+import System.Statusbar.Timer (runTimer)
 
 {-# ANN Options ("HLint: ignore Use newtype instead of data" :: String) #-}
 data Options = Options {optVerbose :: !Bool}
   deriving stock (Show)
 
 main :: IO ()
-main = execParser options >>= run
+main = do
+  hSetBuffering stdout LineBuffering
+  Options.execParser options >>= run
 
 run :: Options -> IO ()
-run opts = putTextLn ("Executable for tomato-slicer: " <> show opts)
+run _ = runTimer
 
 options :: ParserInfo Options
 options =
-  info (parser <**> helper) $
-    fullDesc
-      <> progDesc "A tomato timer for JSON-speaking status bars"
-      <> header "tomato-slicer - tomato timer status-bar module"
+  Options.info (parser <**> Options.helper) $
+    Options.fullDesc
+      <> Options.progDesc "A tomato timer for JSON-speaking status bars"
+      <> Options.header "tomato-slicer - tomato timer status-bar module"
 
 parser :: Parser Options
 parser = Options <$> verboseOpt
   where
     verboseOpt =
-      switch $
-        long "verbose"
-          <> short 'v'
-          <> help "Verbose output?"
+      Options.switch $
+        Options.long "verbose"
+          <> Options.short 'v'
+          <> Options.help "Verbose output?"

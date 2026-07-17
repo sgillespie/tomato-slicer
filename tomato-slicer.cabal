@@ -60,6 +60,8 @@ library
   hs-source-dirs: src
   exposed-modules:
     System.Statusbar.Timer
+  build-depends:
+    aeson,
 
 executable tomato-slicer
   import: common-options

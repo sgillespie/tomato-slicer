@@ -9,12 +9,16 @@ default:
 ## Building and running
 
 # Build the executable
-build:
-    nix build ".#tomato-slicer:exe:tomato-slicer"
+build *ARGS:
+    nix build {{ ARGS }} ".#tomato-slicer:exe:tomato-slicer"
 
 # Run the executable (`just run -- --help`)
 run *args:
     nix run ".#tomato-slicer:exe:tomato-slicer" -- {{ args }}
+
+# Start waybar with a custom tomato-slicer module
+run-waybar *ARGS: build
+    waybar --config test/data/config.jsonc
 
 # Build release artifacts
 dist:
@@ -44,8 +48,8 @@ test:
     nix build ".#checks.{{ system }}.tomato-slicer:test:tests"
 
 # Run basic checks
-check-light:
-    nix build \
+check-light *ARGS:
+    nix build {{ ARGS }} \
       ".#checks.{{ system }}.statix" \
       ".#checks.{{ system }}.deadnix" \
       ".#checks.{{ system }}.hlint" \

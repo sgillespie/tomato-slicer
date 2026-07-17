@@ -1,0 +1,15 @@
+{
+  // Minimal Waybar config. To test, run:
+  //
+  //     waybar -c test/data/config.jsonc
+  "layer": "top",
+  "position": "top",
+  "modules-left": [],
+  "modules-center": ["custom/tomato-slicer"],
+  "modules-right": [],
+
+  "custom/tomato-slicer": {
+    "exec": "./result/bin/tomato-slicer",
+    "return-type": "json"
+  }
+}
