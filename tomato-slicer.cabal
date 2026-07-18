@@ -60,8 +60,12 @@ library
   hs-source-dirs: src
   exposed-modules:
     System.Statusbar.Timer
+    System.Statusbar.Timer.Timer
+
   build-depends:
     aeson,
+    clock,
+    time,
 
 executable tomato-slicer
   import: common-options
@@ -87,10 +91,9 @@ test-suite tests
   build-depends:
     hspec,
     tasty,
-    tasty-hspec,
+    tasty-hspec >=1.2,
     tomato-slicer,
 
-  build-tool-depends: tasty-discover:tasty-discover
   ghc-options:
     -threaded
     -rtsopts

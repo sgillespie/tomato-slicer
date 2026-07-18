@@ -1,12 +1,24 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module System.Statusbar.Timer
   ( runTimer,
   ) where
 
-import Data.Aeson qualified as Aeson
-import Data.Aeson (ToJSON, KeyValue (..))
+import System.Statusbar.Timer.Timer
+  ( CurrentTime (..),
+    Timer (..),
+    formatTime,
+    remainingTime,
+    startTimer,
+    tickTimer,
+  )
+
 import Control.Concurrent (threadDelay)
+import Data.Aeson (KeyValue (..), ToJSON)
+import Data.Aeson qualified as Aeson
+import Data.Time (secondsToDiffTime)
+import System.Clock (Clock (..), getTime)
 
 data WaybarCustomOutput = WaybarCustomOutput
   { wcoText :: Text,
@@ -18,7 +30,7 @@ data WaybarCustomOutput = WaybarCustomOutput
   deriving stock (Generic, Show)
 
 instance ToJSON WaybarCustomOutput where
-  toJSON (WaybarCustomOutput{..}) =
+  toJSON (WaybarCustomOutput {..}) =
     Aeson.object
       [ "text" .= wcoText,
         "alt" .= wcoAlt,
@@ -29,15 +41,41 @@ instance ToJSON WaybarCustomOutput where
 
 runTimer :: IO ()
 runTimer = do
-  let out = WaybarCustomOutput
-        { wcoText = "Hello, Waybar!",
-          wcoAlt = Nothing,
-          wcoTooltip = Nothing,
-          wcoClass = Nothing,
-          wcoPercentage = Nothing
-        }
+  -- Initialize waybar module output
+  let barOut =
+        WaybarCustomOutput
+          { wcoText = "",
+            wcoAlt = Nothing,
+            wcoTooltip = Nothing,
+            wcoClass = Nothing,
+            wcoPercentage = Nothing
+          }
+
+  -- Start timer
+  t <- getTime Monotonic
+  timer <- newIORef $ startTimer (CurrentTime t) (secondsToDiffTime 30)
 
   forever $ do
-    putLBSLn (Aeson.encode out)
+    -- Update the timer
+    now <- getTime Monotonic
+    timer' <- updateTimer (CurrentTime now) timer
+
+    -- Format and send it to stdout
+    let barOut' = barOut {wcoText = formatTimerState (CurrentTime now) timer'}
+    putLBSLn (Aeson.encode barOut')
+
+    -- Update ~once/sec
     threadDelay 1_000_000
 
+updateTimer :: CurrentTime -> IORef Timer -> IO Timer
+updateTimer now timerRef = do
+  timer <- readIORef timerRef
+
+  let timer' = tickTimer now timer
+  writeIORef timerRef timer'
+
+  pure timer'
+
+formatTimerState :: CurrentTime -> Timer -> Text
+formatTimerState _ TimerDone = "Time is up!"
+formatTimerState now timer = formatTime $ remainingTime now timer
