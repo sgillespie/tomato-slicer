@@ -1,21 +1,11 @@
 module Main (main) where
 
-import Spec qualified
+import System.Statusbar.Timer.TimerTest qualified as TimerTest
 
-import Test.Tasty
-import Test.Tasty.Hspec
+import Test.Hspec
 
 main :: IO ()
-main = defaultMain =<< tests
+main = hspec spec
 
-tests :: IO TestTree
-tests = do
-  specs' <- specs
-  pure $ testGroup "Tests" [specs']
-
-specs :: IO TestTree
-specs = testGroup "(checked by Hspec)" <$> specs'
-  where
-    specs' :: IO [TestTree]
-    specs' = do
-      testSpecs Spec.spec_prelude
+spec :: Spec
+spec = describe "tomato-slicer" TimerTest.spec

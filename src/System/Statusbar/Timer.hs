@@ -1,6 +1,3 @@
-{-# LANGUAGE NumericUnderscores #-}
-{-# LANGUAGE OverloadedStrings #-}
-
 module System.Statusbar.Timer
   ( runTimer,
   ) where
@@ -8,10 +5,10 @@ module System.Statusbar.Timer
 import System.Statusbar.Timer.Timer
   ( CurrentTime (..),
     Timer (..),
-    formatTime,
-    remainingTime,
+    formatDuration,
+    remainingDuration,
     startTimer,
-    tickTimer,
+    tickTimer, Duration (..),
   )
 
 import Control.Concurrent (threadDelay)
@@ -53,7 +50,7 @@ runTimer = do
 
   -- Start timer
   t <- getTime Monotonic
-  timer <- newIORef $ startTimer (CurrentTime t) (secondsToDiffTime 30)
+  timer <- newIORef $ startTimer (CurrentTime t) (Duration $ secondsToDiffTime 30)
 
   forever $ do
     -- Update the timer
@@ -78,4 +75,4 @@ updateTimer now timerRef = do
 
 formatTimerState :: CurrentTime -> Timer -> Text
 formatTimerState _ TimerDone = "Time is up!"
-formatTimerState now timer = formatTime $ remainingTime now timer
+formatTimerState now timer = formatDuration $ remainingDuration now timer

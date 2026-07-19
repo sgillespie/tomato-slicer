@@ -1,49 +1,57 @@
--- | Main interface for timers, with only pure functions. Example usage:
---
---       -- Get the system time from 'clock'
---       now <- getTime Monotonic
---       -- Start the timer
---       timerRef <- newIORef $ startTimer (CurrentTime now) (secondsToDiffTime 10)
---       forever $ do
---         -- Get updated system time
---         now' <- getTime Monotonic
---         -- Update the timer
---         timer <- readIORef timerRef
---         timer' <- tickTimer timer (CurrentTime now')
---         writeIORef timerRef timer'
---
---          -- Read the timer state and format it
---         let result =
---               case timer' of
---                 TimerDone -> "Done"
---                 TimerRunning end -> formatTime (remainingTime (CurrentTime now') end) <> " remaining"
---
---           putStrLn result
+{- | Main interface for timers, with only pure functions. Example usage:
+
+      -- Get the system time from 'clock'
+      now <- getTime Monotonic
+      -- Start the timer
+      timerRef <- newIORef $ startTimer (CurrentTime now) (secondsToDiffTime 10)
+      forever $ do
+        -- Get updated system time
+        now' <- getTime Monotonic
+        -- Update the timer
+        timer <- readIORef timerRef
+        timer' <- tickTimer timer (CurrentTime now')
+        writeIORef timerRef timer'
+
+         -- Read the timer state and format it
+        let result =
+              case timer' of
+                TimerDone -> "Done"
+                TimerRunning end -> formatTime (remainingTime (CurrentTime now') end) <> " remaining"
+
+          putStrLn result
+-}
 module System.Statusbar.Timer.Timer
   ( -- * Core timer types
     Timer (..),
     CurrentTime (..),
     EndTime (..),
+    Duration (..),
+
     -- * Operations on timers
     startTimer,
     tickTimer,
+
     -- * Timer utilities
-    remainingTime,
-    formatTime,
+    remainingDuration,
+    formatDuration,
   ) where
 
 import Data.Text qualified as Text
-import Data.Time (DiffTime, diffTimeToPicoseconds, picosecondsToDiffTime)
+import Data.Time (DiffTime, diffTimeToPicoseconds, picosecondsToDiffTime, FormatTime)
 import Data.Time qualified as Time
 import System.Clock (TimeSpec, fromNanoSecs, toNanoSecs)
 
 -- | The recorded current time, represented by 'TimeSpec'
-newtype CurrentTime = CurrentTime { getCurrentTime :: TimeSpec }
+newtype CurrentTime = CurrentTime {getCurrentTime :: TimeSpec}
   deriving stock (Eq, Ord, Show)
 
 -- | The end time of a timer, represented by 'TimeSpec'
-newtype EndTime = EndTime { getEndTime :: TimeSpec }
+newtype EndTime = EndTime {getEndTime :: TimeSpec}
   deriving stock (Eq, Ord, Show)
+
+newtype Duration = Duration {getDuration :: DiffTime}
+  deriving stock (Eq, Ord, Show)
+  deriving newtype (FormatTime, Num)
 
 -- | Timer state: indicates whether it is running
 data Timer
@@ -51,26 +59,27 @@ data Timer
     TimerDone
   | -- | Timer is running
     TimerRunning
-      EndTime -- ^ The timer deadline
+      EndTime
+      -- ^ The timer deadline
 
 -- | Calculate the deadline and return a running 'Timer'
-startTimer :: CurrentTime -> DiffTime -> Timer
-startTimer (CurrentTime now) deadline =
-  TimerRunning . EndTime $ now + fromNanoSecs (nanoSecs deadline)
+startTimer :: CurrentTime -> Duration -> Timer
+startTimer (CurrentTime now) duration =
+  TimerRunning . EndTime . (now +) . fromNanoSecs . nanoSecs $ getDuration duration
   where
     nanoSecs diffTime = diffTimeToPicoseconds diffTime `div` 1000
 
 -- | Calculate the time left on a 'Timer'
-remainingTime :: CurrentTime -> Timer -> DiffTime
-remainingTime _ TimerDone = 0
-remainingTime (CurrentTime now) (TimerRunning (EndTime end)) =
-  picosecondsToDiffTime $ picoSecs (end - now)
+remainingDuration :: CurrentTime -> Timer -> Duration
+remainingDuration _ TimerDone = 0
+remainingDuration (CurrentTime now) (TimerRunning (EndTime end)) =
+  Duration . picosecondsToDiffTime . picoSecs $ end - now
   where
     picoSecs time = toNanoSecs time * 1000
 
 -- | Format the time in the form "MM:SS"
-formatTime :: DiffTime -> Text
-formatTime = Text.pack . Time.formatTime Time.defaultTimeLocale "%0M:%0S"
+formatDuration :: Duration -> Text
+formatDuration = Text.pack . Time.formatTime Time.defaultTimeLocale "%0M:%0S"
 
 -- | Advance the timer. If expired, mark it as done.
 tickTimer :: CurrentTime -> Timer -> Timer

@@ -50,6 +50,7 @@ common common-options
     DeriveAnyClass
     DerivingStrategies
     LambdaCase
+    NumericUnderscores
     OverloadedStrings
     RecordWildCards
 
@@ -86,12 +87,15 @@ test-suite tests
   hs-source-dirs: test
   main-is: Main.hs
   other-modules:
-    Spec
+    System.Statusbar.Timer.Gen
+    System.Statusbar.Timer.TimerTest
 
   build-depends:
+    clock,
+    hedgehog,
     hspec,
-    tasty,
-    tasty-hspec >=1.2,
+    hspec-hedgehog,
+    time,
     tomato-slicer,
 
   ghc-options:
