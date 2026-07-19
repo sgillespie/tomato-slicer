@@ -79,7 +79,7 @@ remainingDuration (CurrentTime now) (TimerRunning (EndTime end)) =
 
 -- | Format the time in the form "MM:SS"
 formatDuration :: Duration -> Text
-formatDuration = Text.pack . Time.formatTime Time.defaultTimeLocale "%0M:%0S"
+formatDuration = toText . Time.formatTime Time.defaultTimeLocale "%0M:%0S"
 
 -- | Advance the timer. If expired, mark it as done.
 tickTimer :: CurrentTime -> Timer -> Timer

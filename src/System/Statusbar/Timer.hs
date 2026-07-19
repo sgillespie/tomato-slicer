@@ -52,7 +52,7 @@ runTimer = do
   t <- getTime Monotonic
   timer <- newIORef $ startTimer (CurrentTime t) (Duration $ secondsToDiffTime 30)
 
-  forever $ do
+  void . infinitely $ do
     -- Update the timer
     now <- getTime Monotonic
     timer' <- updateTimer (CurrentTime now) timer
