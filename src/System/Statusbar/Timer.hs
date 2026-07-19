@@ -4,11 +4,12 @@ module System.Statusbar.Timer
 
 import System.Statusbar.Timer.Timer
   ( CurrentTime (..),
+    Duration (..),
     Timer (..),
     formatDuration,
     remainingDuration,
     startTimer,
-    tickTimer, Duration (..),
+    tickTimer,
   )
 
 import Control.Concurrent (threadDelay)

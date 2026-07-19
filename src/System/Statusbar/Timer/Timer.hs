@@ -37,7 +37,7 @@ module System.Statusbar.Timer.Timer
   ) where
 
 import Data.Text qualified as Text
-import Data.Time (DiffTime, diffTimeToPicoseconds, picosecondsToDiffTime, FormatTime)
+import Data.Time (DiffTime, FormatTime, diffTimeToPicoseconds, picosecondsToDiffTime)
 import Data.Time qualified as Time
 import System.Clock (TimeSpec, fromNanoSecs, toNanoSecs)
 

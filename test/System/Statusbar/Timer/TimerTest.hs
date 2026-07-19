@@ -1,13 +1,13 @@
 module System.Statusbar.Timer.TimerTest (spec) where
 
-import System.Statusbar.Timer.Gen (genDuration, genCurrentTime)
+import System.Statusbar.Timer.Gen (genCurrentTime, genDuration)
 import System.Statusbar.Timer.Timer
 
+import Data.Time.Clock (diffTimeToPicoseconds)
 import Hedgehog
 import System.Clock (fromNanoSecs)
 import Test.Hspec
 import Test.Hspec.Hedgehog (hedgehog)
-import Data.Time.Clock (diffTimeToPicoseconds)
 
 spec :: Spec
 spec = describe "System.Statusbar.Timer.Timer" $ do
