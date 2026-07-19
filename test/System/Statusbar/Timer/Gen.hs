@@ -1,19 +1,30 @@
 module System.Statusbar.Timer.Gen
-  ( genDuration,
-    genCurrentTime,
+  ( durationInSecs,
+    currentTimeInNanos,
+    endTimeInNanos,
+    upperBoundSecs,
+    upperBoundNanos,
   ) where
 
-import System.Statusbar.Timer.Timer (CurrentTime (..), Duration (..))
+import System.Statusbar.Timer.Timer (CurrentTime (..), Duration (..), EndTime (..))
 
 import Data.Time (secondsToDiffTime)
 import Hedgehog (Gen)
 import Hedgehog.Gen qualified as Gen
-import Hedgehog.Range qualified as Range
+import Hedgehog.Range (Range)
 import System.Clock (fromNanoSecs)
 
-genDuration :: Gen Duration
-genDuration = Duration . secondsToDiffTime <$> Gen.integral (Range.linear 1 3600)
+durationInSecs :: Range Integer -> Gen Duration
+durationInSecs range = Duration . secondsToDiffTime <$> Gen.integral range
 
-genCurrentTime :: Gen CurrentTime
-genCurrentTime =
-  CurrentTime . fromNanoSecs <$> Gen.integral (Range.linear 0 1000000000000)
+upperBoundSecs :: Integer
+upperBoundSecs = 3600
+
+currentTimeInNanos :: Range Integer -> Gen CurrentTime
+currentTimeInNanos range = CurrentTime . fromNanoSecs <$> Gen.integral range
+
+endTimeInNanos :: Range Integer -> Gen EndTime
+endTimeInNanos range = EndTime . fromNanoSecs <$> Gen.integral range
+
+upperBoundNanos :: Integer
+upperBoundNanos = 1_000_000_000_000

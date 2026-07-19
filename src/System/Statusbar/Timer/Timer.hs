@@ -36,7 +36,6 @@ module System.Statusbar.Timer.Timer
     formatDuration,
   ) where
 
-import Data.Text qualified as Text
 import Data.Time (DiffTime, FormatTime, diffTimeToPicoseconds, picosecondsToDiffTime)
 import Data.Time qualified as Time
 import System.Clock (TimeSpec, fromNanoSecs, toNanoSecs)
@@ -61,6 +60,7 @@ data Timer
     TimerRunning
       EndTime
       -- ^ The timer deadline
+  deriving stock (Eq, Ord, Show)
 
 -- | Calculate the deadline and return a running 'Timer'
 startTimer :: CurrentTime -> Duration -> Timer
@@ -68,6 +68,13 @@ startTimer (CurrentTime now) duration =
   TimerRunning . EndTime . (now +) . fromNanoSecs . nanoSecs $ getDuration duration
   where
     nanoSecs diffTime = diffTimeToPicoseconds diffTime `div` 1000
+
+-- | Advance the timer. If expired, mark it as done.
+tickTimer :: CurrentTime -> Timer -> Timer
+tickTimer _ TimerDone = TimerDone
+tickTimer (CurrentTime now) timer@(TimerRunning (EndTime end))
+  | now >= end = TimerDone
+  | otherwise = timer
 
 -- | Calculate the time left on a 'Timer'
 remainingDuration :: CurrentTime -> Timer -> Duration
@@ -80,10 +87,3 @@ remainingDuration (CurrentTime now) (TimerRunning (EndTime end)) =
 -- | Format the time in the form "MM:SS"
 formatDuration :: Duration -> Text
 formatDuration = toText . Time.formatTime Time.defaultTimeLocale "%0M:%0S"
-
--- | Advance the timer. If expired, mark it as done.
-tickTimer :: CurrentTime -> Timer -> Timer
-tickTimer _ TimerDone = TimerDone
-tickTimer (CurrentTime now) timer@(TimerRunning (EndTime end))
-  | now >= end = TimerDone
-  | otherwise = timer
