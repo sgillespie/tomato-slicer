@@ -48,14 +48,17 @@ To view them, run the default recipe:
 just
 
 Available recipes:
-    default     # Show available recipes
-    build       # Build the executable
-    run *args   # Run the executable (`just run -- --help`)
-    dist        # Build release artifacts
-    lint        # Run the static analyzers (statix, deadnix, hlint)
-    fmt         # Format the source tree in place
-    fmt-check   # Check formatting without writing changes
-    test        # Run the test suite
+    default           # Show available recipes
+    build *ARGS       # Build the executable
+    run *args         # Run the executable (`just run -- --help`)
+    run-waybar *ARGS  # Start waybar with a custom tomato-slicer module
+    dist              # Build release artifacts
+    lint              # Run the static analyzers (statix, deadnix, hlint)
+    fmt               # Format the source tree in place
+    fmt-check         # Check formatting without writing changes
+    test              # Run the test suite
+    check-light *ARGS # Run basic checks
+    check-full        # Run the full flake check (every check, all systems)
 ```
 
 You can also build and run directly with `cabal` from inside the dev shell.
