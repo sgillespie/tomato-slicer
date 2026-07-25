@@ -37,8 +37,8 @@ instance ToJSON WaybarCustomOutput where
         "percentage" .= wcoPercentage
       ]
 
-runTimer :: IO ()
-runTimer = do
+runTimer :: Word -> IO ()
+runTimer durationInSeconds = do
   -- Initialize waybar module output
   let barOut =
         WaybarCustomOutput
@@ -49,9 +49,11 @@ runTimer = do
             wcoPercentage = Nothing
           }
 
+      durationInSeconds' = fromIntegral durationInSeconds
+
   -- Start timer
   t <- getTime Monotonic
-  timer <- newIORef $ startTimer (CurrentTime t) (Duration $ secondsToDiffTime 30)
+  timer <- newIORef $ startTimer (CurrentTime t) (Duration $ secondsToDiffTime durationInSeconds')
 
   void . infinitely $ do
     -- Update the timer
