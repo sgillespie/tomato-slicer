@@ -1,8 +1,8 @@
-module System.Statusbar.Timer
+module System.Statusbar.Pomodoro
   ( runTimer,
   ) where
 
-import System.Statusbar.Timer.Timer
+import System.Statusbar.Pomodoro.Timer
   ( CurrentTime (..),
     Duration (..),
     Timer (..),

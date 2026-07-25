@@ -1,7 +1,7 @@
-module System.Statusbar.Timer.TimerTest (spec) where
+module System.Statusbar.Pomodoro.TimerTest (spec) where
 
-import System.Statusbar.Timer.Gen qualified as Gen
-import System.Statusbar.Timer.Timer
+import System.Statusbar.Pomodoro.Gen qualified as Gen
+import System.Statusbar.Pomodoro.Timer
   ( CurrentTime (..),
     Duration (..),
     EndTime (..),

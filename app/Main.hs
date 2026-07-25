@@ -2,7 +2,7 @@ module Main (main) where
 
 import Options.Applicative (Parser, ParserInfo)
 import Options.Applicative qualified as Options
-import System.Statusbar.Timer (runTimer)
+import System.Statusbar.Pomodoro (runTimer)
 
 {-# ANN Options ("HLint: ignore Use newtype instead of data" :: String) #-}
 data Options = Options {optVerbose :: !Bool}

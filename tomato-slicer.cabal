@@ -60,8 +60,8 @@ library
   import: common-options
   hs-source-dirs: src
   exposed-modules:
-    System.Statusbar.Timer
-    System.Statusbar.Timer.Timer
+    System.Statusbar.Pomodoro
+    System.Statusbar.Pomodoro.Timer
 
   build-depends:
     aeson,
@@ -87,8 +87,8 @@ test-suite tests
   hs-source-dirs: test
   main-is: Main.hs
   other-modules:
-    System.Statusbar.Timer.Gen
-    System.Statusbar.Timer.TimerTest
+    System.Statusbar.Pomodoro.Gen
+    System.Statusbar.Pomodoro.TimerTest
 
   build-depends:
     clock,

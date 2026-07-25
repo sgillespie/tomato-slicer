@@ -1,6 +1,6 @@
 module Main (main) where
 
-import System.Statusbar.Timer.TimerTest qualified as TimerTest
+import System.Statusbar.Pomodoro.TimerTest qualified as TimerTest
 
 import Test.Hspec
 

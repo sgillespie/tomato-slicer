@@ -1,4 +1,4 @@
-module System.Statusbar.Timer.Gen
+module System.Statusbar.Pomodoro.Gen
   ( durationInSecs,
     currentTimeInNanos,
     endTimeInNanos,
@@ -6,7 +6,7 @@ module System.Statusbar.Timer.Gen
     upperBoundNanos,
   ) where
 
-import System.Statusbar.Timer.Timer (CurrentTime (..), Duration (..), EndTime (..))
+import System.Statusbar.Pomodoro.Timer (CurrentTime (..), Duration (..), EndTime (..))
 
 import Data.Time (secondsToDiffTime)
 import Hedgehog (Gen)

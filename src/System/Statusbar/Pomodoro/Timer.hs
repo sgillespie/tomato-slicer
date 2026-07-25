@@ -20,7 +20,7 @@
 
           putStrLn result
 -}
-module System.Statusbar.Timer.Timer
+module System.Statusbar.Pomodoro.Timer
   ( -- * Core timer types
     Timer (..),
     CurrentTime (..),
