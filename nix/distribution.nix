@@ -39,6 +39,8 @@
         tar -cvzf $out/$dist_file .
       '';
 
+    # See the comment on mingw and unix signals below
+    # deadnix: skip
     mkDistWin64 = let
       inherit (project.exes."tomato-slicer".identifier) version;
       project = haskellProject.projectCross.mingwW64;
@@ -64,7 +66,9 @@
   in {
     packages = lib.optionalAttrs (system == "x86_64-linux") {
       x86_64-linux-static-dist = mkDistMusl;
-      x86_64-windows-dist = mkDistWin64;
+      # TODO[sgillespie]: mingw won't work with unix signals. After daemonizing the exe,
+      # remove unix dependency and restore the windows dist
+      # x86_64-windows-dist = mkDistWin64;
     };
   };
 }
