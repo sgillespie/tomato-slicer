@@ -10,6 +10,7 @@ import System.Statusbar.Pomodoro.Timer
     remainingDuration,
     startTimer,
     tickTimer,
+    togglePausedTimer,
   )
 
 import Control.Concurrent (threadDelay)
@@ -17,6 +18,7 @@ import Data.Aeson (KeyValue (..), ToJSON)
 import Data.Aeson qualified as Aeson
 import Data.Time (secondsToDiffTime)
 import System.Clock (Clock (..), getTime)
+import System.Posix (Handler (..), installHandler, sigUSR1)
 
 data WaybarCustomOutput = WaybarCustomOutput
   { wcoText :: Text,
@@ -54,11 +56,13 @@ runTimer durationInSeconds = do
   -- Start timer
   t <- getTime Monotonic
   timer <- newIORef $ startTimer (CurrentTime t) (Duration $ secondsToDiffTime durationInSeconds')
+  -- Handle pause/continue
+  void $ setupSignalHandlers timer
 
   void . infinitely $ do
     -- Update the timer
     now <- getTime Monotonic
-    timer' <- updateTimer (CurrentTime now) timer
+    timer' <- updateTimer (CurrentTime now) timer tickTimer
 
     -- Format and send it to stdout
     let barOut' = barOut {wcoText = formatTimerState (CurrentTime now) timer'}
@@ -67,11 +71,19 @@ runTimer durationInSeconds = do
     -- Update ~once/sec
     threadDelay 1_000_000
 
-updateTimer :: CurrentTime -> IORef Timer -> IO Timer
-updateTimer now timerRef = do
+setupSignalHandlers :: IORef Timer -> IO Handler
+setupSignalHandlers timerRef = do
+  installHandler sigUSR1 (Catch togglePaused) Nothing
+  where
+    togglePaused = do
+      now <- getTime Monotonic
+      void $ updateTimer (CurrentTime now) timerRef togglePausedTimer
+
+updateTimer :: CurrentTime -> IORef Timer -> (CurrentTime -> Timer -> Timer) -> IO Timer
+updateTimer now timerRef advance = do
   timer <- readIORef timerRef
 
-  let timer' = tickTimer now timer
+  let timer' = advance now timer
   writeIORef timerRef timer'
 
   pure timer'

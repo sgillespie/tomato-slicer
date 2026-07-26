@@ -20,8 +20,10 @@
     inherit (pkgs.stdenv.hostPlatform) isx86_64 isLinux;
 
     crossPlatforms = p:
-      lib.optionals isx86_64 [p.mingwW64]
-      ++ lib.optionals (isx86_64 && isLinux) [p.musl64];
+      lib.optionals (isx86_64 && isLinux) [p.musl64];
+    # TODO[sgillespie]: mingw won't work with unix signals. After daemonizing the exe,
+    # remove unix dependency and restore mingw cross build.
+    # ++ lib.optionals isx86_64 [p.mingwW64]
 
     cabalProject = pkgs.haskell-nix.cabalProject' {
       src = ./..;

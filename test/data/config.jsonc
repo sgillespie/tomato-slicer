@@ -10,6 +10,7 @@
 
   "custom/tomato-slicer": {
     "exec": "./result/bin/tomato-slicer",
+    "on-click": "pkill -SIGUSR1 -f tomato-slicer",
     "return-type": "json"
   }
 }

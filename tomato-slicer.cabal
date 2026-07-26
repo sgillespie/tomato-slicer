@@ -67,6 +67,7 @@ library
     aeson,
     clock,
     time,
+    unix,
 
 executable tomato-slicer
   import: common-options
