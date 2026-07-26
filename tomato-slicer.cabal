@@ -61,7 +61,9 @@ library
   hs-source-dirs: src
   exposed-modules:
     System.Statusbar.Pomodoro
+    System.Statusbar.Pomodoro.Run
     System.Statusbar.Pomodoro.Timer
+    System.Statusbar.Pomodoro.Waybar
 
   build-depends:
     aeson,
