@@ -6,6 +6,7 @@ import System.Statusbar.Pomodoro.Timer
   ( CurrentTime (..),
     Duration (..),
     Timer (..),
+    resetTimer,
     startTimer,
     tickTimer,
     togglePausedTimer,
@@ -19,7 +20,7 @@ import Control.Concurrent (threadDelay)
 import Data.Aeson qualified as Aeson
 import Data.Time (secondsToDiffTime)
 import System.Clock (Clock (..), getTime)
-import System.Posix (Handler (..), installHandler, sigUSR1)
+import System.Posix (Handler (..), installHandler, sigUSR1, sigUSR2)
 
 runTimer :: Word -> IO ()
 runTimer durationInSeconds = do
@@ -36,30 +37,30 @@ runTimer durationInSeconds = do
 
   t <- getTime Monotonic
   timer <- newIORef $ startTimer (CurrentTime t) (Duration $ secondsToDiffTime durationInSeconds')
-  void $ setupSignalHandlers timer
+  setupSignalHandlers timer
 
   void . infinitely $ do
     now <- getTime Monotonic
-    timer' <- updateTimer (CurrentTime now) timer tickTimer
+    timer' <- updateTimer timer (tickTimer (CurrentTime now))
 
     let barOut' = barOut {wcoText = formatTimerState (CurrentTime now) timer'}
     putLBSLn (Aeson.encode barOut')
 
     threadDelay 1_000_000
 
-setupSignalHandlers :: IORef Timer -> IO Handler
+setupSignalHandlers :: IORef Timer -> IO ()
 setupSignalHandlers timerRef = do
-  installHandler sigUSR1 (Catch togglePaused) Nothing
+  void $ installHandler sigUSR1 (Catch togglePaused) Nothing
+  void $ installHandler sigUSR2 (Catch reset) Nothing
   where
     togglePaused = do
       now <- getTime Monotonic
-      void $ updateTimer (CurrentTime now) timerRef togglePausedTimer
+      void $ updateTimer timerRef (togglePausedTimer (CurrentTime now))
 
-updateTimer :: CurrentTime -> IORef Timer -> (CurrentTime -> Timer -> Timer) -> IO Timer
-updateTimer now timerRef advance = do
+    reset = void $ updateTimer timerRef resetTimer
+
+updateTimer :: IORef Timer -> (Timer -> Timer) -> IO Timer
+updateTimer timerRef advance = do
   timer <- readIORef timerRef
-
-  let timer' = advance now timer
-  writeIORef timerRef timer'
-
-  pure timer'
+  writeIORef timerRef (advance timer)
+  readIORef timerRef

@@ -11,6 +11,7 @@ import System.Statusbar.Pomodoro.Timer
     formatDuration,
     pauseTimer,
     remainingDuration,
+    resetTimer,
     resumeTimer,
     startTimer,
     tickTimer,
@@ -163,6 +164,22 @@ spec = describe "System.Statusbar.Timer.Timer" $ do
         (TimerPaused remaining)
         (togglePausedTimer now)
         (Identity . togglePausedTimer now)
+
+  describe "resetTimer" $ do
+    it "resets a ready timer" $ hedgehog $ do
+      resetTimer TimerReady === TimerReady
+
+    it "resets a completed timer" $ hedgehog $ do
+      resetTimer TimerDone === TimerReady
+
+    it "resets a running timer" $ hedgehog $ do
+      end <- forAll $ Gen.endTimeInNanos (Range.linear 0 Gen.upperBoundNanos)
+      resetTimer (TimerRunning end) === TimerReady
+
+    it "resets a paused timer" $ hedgehog $ do
+      remaining <-
+        forAll $ Gen.remainingTimeInNanos (Range.linear 0 Gen.upperBoundNanos)
+      resetTimer (TimerPaused remaining) === TimerReady
 
   describe "remainingDuration" $ do
     it "returns 0 when timer is completed" $ hedgehog $ do
