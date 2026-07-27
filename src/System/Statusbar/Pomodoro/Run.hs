@@ -33,20 +33,20 @@ runTimer durationInSeconds = do
             wcoPercentage = Nothing
           }
 
-      durationInSeconds' = fromIntegral durationInSeconds
-
-  t <- getTime Monotonic
-  timer <- newIORef $ startTimer (CurrentTime t) (Duration $ secondsToDiffTime durationInSeconds')
-  setupSignalHandlers timer
+  timerRef <- startTimer' durationInSeconds
+  setupSignalHandlers timerRef
 
   void . infinitely $ do
-    now <- getTime Monotonic
-    timer' <- updateTimer timer (tickTimer (CurrentTime now))
-
-    let barOut' = barOut {wcoText = formatTimerState (CurrentTime now) timer'}
-    putLBSLn (Aeson.encode barOut')
-
+    now <- CurrentTime <$> getTime Monotonic
+    timer <- updateTimer timerRef (tickTimer now)
+    printTimerState barOut now timer
     threadDelay 1_000_000
+
+startTimer' :: Word -> IO (IORef Timer)
+startTimer' durationInSeconds = do
+  now <- CurrentTime <$> getTime Monotonic
+  let duration = Duration . secondsToDiffTime $ fromIntegral durationInSeconds
+  newIORef $ startTimer now duration
 
 setupSignalHandlers :: IORef Timer -> IO ()
 setupSignalHandlers timerRef = do
@@ -64,3 +64,8 @@ updateTimer timerRef advance = do
   timer <- readIORef timerRef
   writeIORef timerRef (advance timer)
   readIORef timerRef
+
+printTimerState :: WaybarOutput -> CurrentTime -> Timer -> IO ()
+printTimerState barOut now timer = putLBSLn . Aeson.encode $ barOut'
+  where
+    barOut' = barOut {wcoText = formatTimerState now timer}
