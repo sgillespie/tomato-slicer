@@ -11,7 +11,7 @@ module System.Statusbar.Pomodoro
     tickTimer,
     pauseTimer,
     resumeTimer,
-    togglePausedTimer,
+    toggleRunningTimer,
     resetTimer,
 
     -- * Runner
@@ -33,6 +33,6 @@ import System.Statusbar.Pomodoro.Timer
     resumeTimer,
     startTimer,
     tickTimer,
-    togglePausedTimer,
+    toggleRunningTimer,
   )
 import System.Statusbar.Pomodoro.Waybar (WaybarOutput (..))

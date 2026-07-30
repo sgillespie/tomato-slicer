@@ -5,6 +5,7 @@ module System.Statusbar.Pomodoro.Waybar
 
 import System.Statusbar.Pomodoro.Timer
   ( CurrentTime,
+    Duration (..),
     Timer (..),
     formatDuration,
     remainingDuration,
@@ -32,6 +33,7 @@ instance ToJSON WaybarOutput where
         "percentage" .= wcoPercentage
       ]
 
-formatTimerState :: CurrentTime -> Timer -> Text
-formatTimerState _ TimerDone = "Time is up!"
-formatTimerState now timer = formatDuration $ remainingDuration now timer
+formatTimerState :: Duration -> CurrentTime -> Timer -> Text
+formatTimerState duration now timer
+  | remainingDuration duration now timer == 0 = "Time is up!"
+  | otherwise = formatDuration (remainingDuration duration now timer)

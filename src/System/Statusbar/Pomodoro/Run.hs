@@ -9,7 +9,8 @@ import System.Statusbar.Pomodoro.Timer
     resetTimer,
     startTimer,
     tickTimer,
-    togglePausedTimer,
+    toggleRunningTimer,
+    newTimer,
   )
 import System.Statusbar.Pomodoro.Waybar
   ( WaybarOutput (..),
@@ -33,29 +34,26 @@ runTimer durationInSeconds = do
             wcoPercentage = Nothing
           }
 
-  timerRef <- startTimer' durationInSeconds
-  setupSignalHandlers timerRef
+  let duration = Duration . secondsToDiffTime $ fromIntegral durationInSeconds
+
+  timerRef <- newIORef newTimer
+  setupSignalHandlers duration timerRef
+
 
   void . infinitely $ do
     now <- CurrentTime <$> getTime Monotonic
     timer <- updateTimer timerRef (tickTimer now)
-    printTimerState barOut now timer
+    printTimerState barOut duration now timer
     threadDelay 1_000_000
 
-startTimer' :: Word -> IO (IORef Timer)
-startTimer' durationInSeconds = do
-  now <- CurrentTime <$> getTime Monotonic
-  let duration = Duration . secondsToDiffTime $ fromIntegral durationInSeconds
-  newIORef $ startTimer now duration
-
-setupSignalHandlers :: IORef Timer -> IO ()
-setupSignalHandlers timerRef = do
+setupSignalHandlers :: Duration -> IORef Timer -> IO ()
+setupSignalHandlers duration timerRef = do
   void $ installHandler sigUSR1 (Catch togglePaused) Nothing
   void $ installHandler sigUSR2 (Catch reset) Nothing
   where
     togglePaused = do
       now <- getTime Monotonic
-      void $ updateTimer timerRef (togglePausedTimer (CurrentTime now))
+      void $ updateTimer timerRef (toggleRunningTimer duration (CurrentTime now))
 
     reset = void $ updateTimer timerRef resetTimer
 
@@ -65,7 +63,7 @@ updateTimer timerRef advance = do
   writeIORef timerRef (advance timer)
   readIORef timerRef
 
-printTimerState :: WaybarOutput -> CurrentTime -> Timer -> IO ()
-printTimerState barOut now timer = putLBSLn . Aeson.encode $ barOut'
+printTimerState :: WaybarOutput -> Duration -> CurrentTime -> Timer -> IO ()
+printTimerState barOut duration now timer = putLBSLn . Aeson.encode $ barOut'
   where
-    barOut' = barOut {wcoText = formatTimerState now timer}
+    barOut' = barOut {wcoText = formatTimerState duration now timer}

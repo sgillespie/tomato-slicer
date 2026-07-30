@@ -29,11 +29,12 @@ module System.Statusbar.Pomodoro.Timer
     RemainingTime (..),
 
     -- * Operations on timers
+    newTimer,
     startTimer,
     tickTimer,
     pauseTimer,
     resumeTimer,
-    togglePausedTimer,
+    toggleRunningTimer,
     resetTimer,
 
     -- * Timer utilities
@@ -77,10 +78,16 @@ data Timer
       RemainingTime
   deriving stock (Eq, Ord, Show)
 
+newTimer :: Timer
+newTimer = TimerReady
+
 -- | Calculate the deadline and return a running 'Timer'
-startTimer :: CurrentTime -> Duration -> Timer
-startTimer (CurrentTime now) =
-  TimerRunning . EndTime . (now +) . diffTimeToTimeSpec . getDuration
+startTimer :: Duration -> CurrentTime -> Timer -> Timer
+startTimer duration (CurrentTime now) TimerReady =
+  TimerRunning . EndTime . (now +) . diffTimeToTimeSpec . getDuration $ duration
+startTimer _ _ TimerDone = TimerDone
+startTimer _ _ timer@(TimerPaused _) = timer
+startTimer _ _ timer@(TimerRunning _) = timer
 
 -- | Advance the timer. If expired, mark it as done.
 tickTimer :: CurrentTime -> Timer -> Timer
@@ -109,23 +116,23 @@ resumeTimer (CurrentTime now) (TimerPaused remaining) =
 
 -- | Invert the pause state of a timer. In other words, if it is running, pause it; if it
 -- is paused, resume it
-togglePausedTimer :: CurrentTime -> Timer -> Timer
-togglePausedTimer _ TimerReady = TimerReady
-togglePausedTimer _ TimerDone = TimerDone
-togglePausedTimer now timer@(TimerRunning _) = pauseTimer now timer
-togglePausedTimer now timer@(TimerPaused _) = resumeTimer now timer
+toggleRunningTimer :: Duration -> CurrentTime -> Timer -> Timer
+toggleRunningTimer duration now TimerReady = startTimer duration now TimerReady
+toggleRunningTimer _ _ TimerDone = TimerDone
+toggleRunningTimer _ now timer@(TimerRunning _) = pauseTimer now timer
+toggleRunningTimer _ now timer@(TimerPaused _) = resumeTimer now timer
 
 -- | Reset a timer to its ready state
 resetTimer :: Timer -> Timer
 resetTimer _ = TimerReady
 
 -- | Calculate the time left on a 'Timer'
-remainingDuration :: CurrentTime -> Timer -> Duration
-remainingDuration _ TimerReady = 0
-remainingDuration _ TimerDone = 0
-remainingDuration _ (TimerPaused (RemainingTime remaining)) =
+remainingDuration :: Duration -> CurrentTime -> Timer -> Duration
+remainingDuration duration _ TimerReady = duration
+remainingDuration _ _ TimerDone = 0
+remainingDuration _ _ (TimerPaused (RemainingTime remaining)) =
   Duration (timeSpecToDiffTime remaining)
-remainingDuration (CurrentTime now) (TimerRunning (EndTime end)) =
+remainingDuration _ (CurrentTime now) (TimerRunning (EndTime end)) =
   Duration $ timeSpecToDiffTime (end - now)
 
 -- | Format the time in the form "MM:SS"

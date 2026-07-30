@@ -9,13 +9,14 @@ import System.Statusbar.Pomodoro.Timer
     Timer (..),
     diffTimeToTimeSpec,
     formatDuration,
+    newTimer,
     pauseTimer,
     remainingDuration,
     resetTimer,
     resumeTimer,
     startTimer,
     tickTimer,
-    togglePausedTimer,
+    toggleRunningTimer,
   )
 
 import Data.Text qualified as Text
@@ -23,26 +24,38 @@ import Data.Time.Clock (DiffTime, picosecondsToDiffTime)
 import Hedgehog (annotateShow, failure, forAll, tripping, (===))
 import Hedgehog.Range qualified as Range
 import System.Clock (TimeSpec, toNanoSecs)
-import Test.Hspec (Spec, describe, it)
+import Test.Hspec (Spec, describe, it, shouldBe)
 import Test.Hspec.Hedgehog (hedgehog)
 
 spec :: Spec
 spec = describe "System.Statusbar.Timer.Timer" $ do
+  describe "newTimer" $ do
+    it "sets state to ready" $
+      newTimer `shouldBe` TimerReady
+
   describe "startTimer" $ do
-    it "sets expected deadline" $ hedgehog $ do
+    it "leaves a non-ready timer non-ready" $ hedgehog $ do
+      let rangeNanos = Range.linear 0 Gen.upperBoundNanos
+          rangeSecs = Range.linear 0 Gen.upperBoundSecs
+
+      now <- forAll $ Gen.currentTimeInNanos rangeNanos
+      duration <- forAll $ Gen.durationInSecs rangeSecs
+      endTime <- forAll $ Gen.endTimeInNanos rangeNanos
+      remainingTime <- forAll $ Gen.remainingTimeInNanos rangeNanos
+
+      startTimer duration now TimerDone === TimerDone
+      startTimer duration now (TimerRunning endTime) === TimerRunning endTime
+      startTimer duration now (TimerPaused remainingTime) === TimerPaused remainingTime
+
+    it "starts a ready timer" $ hedgehog $ do
       now@(CurrentTime nowSpec) <-
         forAll $ Gen.currentTimeInNanos (Range.linear 0 Gen.upperBoundNanos)
       duration@(Duration diffTime) <-
         forAll $ Gen.durationInSecs (Range.linear 0 Gen.upperBoundSecs)
 
-      let timer = startTimer now duration
-          expectedEndTime = timeSpecToDiffTime nowSpec + diffTime
+      let expectedEndTime = EndTime (nowSpec + diffTimeToTimeSpec diffTime)
 
-      case timer of
-        TimerRunning (EndTime endSpec) -> timeSpecToDiffTime endSpec === expectedEndTime
-        TimerReady -> failure
-        TimerDone -> failure
-        TimerPaused {} -> failure
+      startTimer duration now TimerReady === TimerRunning expectedEndTime
 
   describe "tickTimer" $ do
     it "leaves a non-running timer non-running" $ hedgehog $ do
@@ -114,11 +127,22 @@ spec = describe "System.Statusbar.Timer.Timer" $ do
 
       resumeTimer now (TimerPaused remaining) === TimerRunning expectedEnd
 
-  describe "togglePausedTimer" $ do
-    it "leaves non-paused/non-running timer non-paused/non-running" $ hedgehog $ do
+  describe "toggleRunningTimer" $ do
+    it "leaves a done timer done" $ hedgehog $ do
       now <- forAll $ Gen.currentTimeInNanos (Range.linear 0 Gen.upperBoundNanos)
-      togglePausedTimer now TimerReady === TimerReady
-      togglePausedTimer now TimerDone === TimerDone
+      duration <- forAll $ Gen.durationInSecs (Range.linear 0 Gen.upperBoundSecs)
+
+      toggleRunningTimer duration now TimerDone === TimerDone
+
+    it "starts a ready timer" $ hedgehog $ do
+      now@(CurrentTime nowSpec) <- 
+        forAll $ Gen.currentTimeInNanos (Range.linear 0 Gen.upperBoundNanos)
+      duration@(Duration diffTime) <-
+        forAll $ Gen.durationInSecs (Range.linear 0 Gen.upperBoundNanos)
+
+      let expectedEndTime = diffTimeToTimeSpec diffTime + nowSpec
+
+      toggleRunningTimer duration now TimerReady === TimerRunning (EndTime expectedEndTime)
 
     it "sets paused timer's state to running" $ hedgehog $ do
       now@(CurrentTime nowSpec) <-
@@ -126,10 +150,11 @@ spec = describe "System.Statusbar.Timer.Timer" $ do
       end@(EndTime endSpec) <-
         forAll $
           Gen.endTimeInNanos (Range.linear (toNanoSecs nowSpec + 1) Gen.upperBoundNanos)
+      duration <- forAll $ Gen.durationInSecs (Range.linear 0 Gen.upperBoundSecs)
 
       let expectedRemaining = RemainingTime (endSpec - nowSpec)
 
-      togglePausedTimer now (TimerRunning end) === TimerPaused expectedRemaining
+      toggleRunningTimer duration now (TimerRunning end) === TimerPaused expectedRemaining
 
     it "sets a running timer's state to paused" $ hedgehog $ do
       now@(CurrentTime nowSpec) <-
@@ -138,10 +163,11 @@ spec = describe "System.Statusbar.Timer.Timer" $ do
         forAll $
           Gen.remainingTimeInNanos $
             Range.linear (toNanoSecs nowSpec + 1) Gen.upperBoundNanos
+      duration <- forAll $ Gen.durationInSecs (Range.linear 0 Gen.upperBoundSecs)
 
       let expectedEnd = EndTime (nowSpec + remainingSpec)
 
-      togglePausedTimer now (TimerPaused remaining) === TimerRunning expectedEnd
+      toggleRunningTimer duration now (TimerPaused remaining) === TimerRunning expectedEnd
 
     it "round trips a running timer" $ hedgehog $ do
       now@(CurrentTime nowSpec) <-
@@ -149,8 +175,12 @@ spec = describe "System.Statusbar.Timer.Timer" $ do
       end <-
         forAll $
           Gen.endTimeInNanos (Range.linear (toNanoSecs nowSpec + 1) Gen.upperBoundNanos)
+      duration <- forAll $ Gen.durationInSecs (Range.linear 0 Gen.upperBoundSecs)
 
-      tripping (TimerRunning end) (togglePausedTimer now) (Identity . togglePausedTimer now)
+      tripping
+        (TimerRunning end)
+        (toggleRunningTimer duration now)
+        (Identity . toggleRunningTimer duration now)
 
     it "round trips a paused timer" $ hedgehog $ do
       now@(CurrentTime nowSpec) <-
@@ -159,11 +189,12 @@ spec = describe "System.Statusbar.Timer.Timer" $ do
         forAll $
           Gen.remainingTimeInNanos $
             Range.linear (toNanoSecs nowSpec + 1) Gen.upperBoundNanos
+      duration <- forAll $ Gen.durationInSecs (Range.linear 0 Gen.upperBoundSecs)
 
       tripping
         (TimerPaused remaining)
-        (togglePausedTimer now)
-        (Identity . togglePausedTimer now)
+        (toggleRunningTimer duration now)
+        (Identity . toggleRunningTimer duration now)
 
   describe "resetTimer" $ do
     it "resets a ready timer" $ hedgehog $ do
@@ -182,11 +213,30 @@ spec = describe "System.Statusbar.Timer.Timer" $ do
       resetTimer (TimerPaused remaining) === TimerReady
 
   describe "remainingDuration" $ do
-    it "returns 0 when timer is completed" $ hedgehog $ do
+    it "returns duration when timer is ready" $ hedgehog $ do
+      duration <- forAll $ Gen.durationInSecs (Range.linear 0 Gen.upperBoundSecs)
       now <- forAll $ Gen.currentTimeInNanos (Range.linear 0 Gen.upperBoundNanos)
-      remainingDuration now TimerDone === 0
+
+      remainingDuration duration now TimerReady === duration
+
+    it "returns 0 when timer is completed" $ hedgehog $ do
+      duration <- forAll $ Gen.durationInSecs (Range.linear 0 Gen.upperBoundSecs)
+      now <- forAll $ Gen.currentTimeInNanos (Range.linear 0 Gen.upperBoundNanos)
+
+      remainingDuration duration now TimerDone === 0
+
+    it "returns remaining time when timer is paused" $ hedgehog $ do
+      duration <- forAll $ Gen.durationInSecs (Range.linear 0 Gen.upperBoundSecs)
+      now <- forAll $ Gen.currentTimeInNanos (Range.linear 0 Gen.upperBoundNanos)
+      remaining@(RemainingTime remainingSpec) <-
+        forAll $ Gen.remainingTimeInNanos (Range.linear 0 Gen.upperBoundNanos)
+
+      let getDuration = Duration . timeSpecToDiffTime
+
+      remainingDuration duration now (TimerPaused remaining) === getDuration remainingSpec
 
     it "returns `end - now` with timer is running" $ hedgehog $ do
+      duration <- forAll $ Gen.durationInSecs (Range.linear 0 Gen.upperBoundSecs)
       now@(CurrentTime nowSpec) <-
         forAll $ Gen.currentTimeInNanos (Range.linear 0 Gen.upperBoundNanos)
       endTime@(EndTime endSpec) <-
@@ -195,7 +245,7 @@ spec = describe "System.Statusbar.Timer.Timer" $ do
 
       let expectedDuration = Duration (timeSpecToDiffTime (endSpec - nowSpec))
 
-      remainingDuration now (TimerRunning endTime) === expectedDuration
+      remainingDuration duration now (TimerRunning endTime) === expectedDuration
 
   describe "formatDuration" $ do
     it "has length of 5" $ hedgehog $ do
