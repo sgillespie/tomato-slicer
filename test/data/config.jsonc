@@ -9,6 +9,7 @@
   "modules-right": [],
 
   "custom/tomato-slicer": {
+    "format": "󰔛 {text}",
     "exec": "./result/bin/tomato-slicer",
     "on-click": "pkill -SIGUSR1 -f tomato-slicer",
     "on-click-right": "pkill -SIGUSR2 -f tomato-slicer",
