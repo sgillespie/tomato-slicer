@@ -22,8 +22,7 @@ import System.Statusbar.Pomodoro.Waybar
 import Control.Concurrent (threadDelay)
 import Data.Aeson qualified as Aeson
 import Data.Default (Default (..))
-import Data.Fixed (E12, Fixed (..), HasResolution (..), Pico)
-import Data.Time (diffTimeToPicoseconds, secondsToDiffTime)
+import Data.Time (secondsToDiffTime)
 import System.Clock (Clock (..), getTime)
 import System.Posix (Handler (..), installHandler, sigUSR1, sigUSR2)
 

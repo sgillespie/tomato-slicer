@@ -8,18 +8,14 @@ module System.Statusbar.Pomodoro.Waybar
 import System.Statusbar.Pomodoro.Timer
   ( CurrentTime (..),
     Duration (..),
-    EndTime (..),
-    RemainingTime (..),
     Timer (..),
     formatDuration,
     remainingDuration,
-    timeSpecToDiffTime,
   )
 
 import Data.Aeson (KeyValue (..), ToJSON)
 import Data.Aeson qualified as Aeson
 import Data.Default (Default (..))
-import System.Clock (TimeSpec)
 
 data WaybarOutput = WaybarOutput
   { wcoText :: Text,
