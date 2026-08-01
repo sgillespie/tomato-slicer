@@ -72,6 +72,8 @@ printTimerState barOut duration now timer = putLBSLn . Aeson.encode $ barOut'
 
 percentage :: Duration -> CurrentTime -> Timer -> Word
 percentage duration now timer =
-  let remaining' = realToFrac $ getDuration (remainingDuration duration now timer)
-      duration' = realToFrac (getDuration duration)
-  in  floor @Rational $ 100 * (1 - remaining' / duration')
+  floor @Rational $ 100 * (1 - remaining / duration')
+  where
+    remaining = realToFrac $ getDuration (remainingDuration duration now timer)
+    duration' = realToFrac (getDuration duration)
+    
