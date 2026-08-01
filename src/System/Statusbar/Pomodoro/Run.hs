@@ -6,39 +6,34 @@ import System.Statusbar.Pomodoro.Timer
   ( CurrentTime (..),
     Duration (..),
     Timer (..),
-    resetTimer,
-    startTimer,
-    tickTimer,
-    toggleRunningTimer,
     newTimer,
+    remainingDuration,
+    resetTimer,
+    tickTimer,
+    timerStateText,
+    toggleRunningTimer,
   )
 import System.Statusbar.Pomodoro.Waybar
   ( WaybarOutput (..),
     formatTimerState,
+    timerTooltipText,
   )
 
 import Control.Concurrent (threadDelay)
 import Data.Aeson qualified as Aeson
-import Data.Time (secondsToDiffTime)
+import Data.Default (Default (..))
+import Data.Time (diffTimeToPicoseconds, secondsToDiffTime)
 import System.Clock (Clock (..), getTime)
 import System.Posix (Handler (..), installHandler, sigUSR1, sigUSR2)
+import Data.Fixed (HasResolution(..), Pico, E12, Fixed (..))
 
 runTimer :: Word -> IO ()
 runTimer durationInSeconds = do
-  let barOut =
-        WaybarOutput
-          { wcoText = "",
-            wcoAlt = Nothing,
-            wcoTooltip = Nothing,
-            wcoClass = Nothing,
-            wcoPercentage = Nothing
-          }
-
-  let duration = Duration . secondsToDiffTime $ fromIntegral durationInSeconds
+  let barOut = def
+      duration = Duration . secondsToDiffTime $ fromIntegral durationInSeconds
 
   timerRef <- newIORef newTimer
   setupSignalHandlers duration timerRef
-
 
   void . infinitely $ do
     now <- CurrentTime <$> getTime Monotonic
@@ -66,4 +61,17 @@ updateTimer timerRef advance = do
 printTimerState :: WaybarOutput -> Duration -> CurrentTime -> Timer -> IO ()
 printTimerState barOut duration now timer = putLBSLn . Aeson.encode $ barOut'
   where
-    barOut' = barOut {wcoText = formatTimerState duration now timer}
+    barOut' =
+      barOut
+        { wcoText = formatTimerState duration now timer,
+          wcoAlt = Just (timerStateText timer),
+          wcoClass = Just (timerStateText timer),
+          wcoTooltip = Just (timerTooltipText duration now timer),
+          wcoPercentage = Just $ percentage duration now timer
+        }
+
+percentage :: Duration -> CurrentTime -> Timer -> Word
+percentage duration now timer =
+  let remaining' = realToFrac $ getDuration (remainingDuration duration now timer)
+      duration' = realToFrac (getDuration duration)
+  in  floor @Rational $ 100 * (1 - remaining' / duration')

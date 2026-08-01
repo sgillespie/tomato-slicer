@@ -38,6 +38,7 @@ module System.Statusbar.Pomodoro.Timer
     resetTimer,
 
     -- * Timer utilities
+    timerStateText,
     remainingDuration,
     formatDuration,
     diffTimeToTimeSpec,
@@ -125,6 +126,12 @@ toggleRunningTimer _ now timer@(TimerPaused _) = resumeTimer now timer
 -- | Reset a timer to its ready state
 resetTimer :: Timer -> Timer
 resetTimer _ = TimerReady
+
+timerStateText :: Timer -> Text
+timerStateText TimerReady = "ready"
+timerStateText TimerDone = "done"
+timerStateText (TimerRunning _) = "running"
+timerStateText (TimerPaused _)= "paused"
 
 -- | Calculate the time left on a 'Timer'
 remainingDuration :: Duration -> CurrentTime -> Timer -> Duration

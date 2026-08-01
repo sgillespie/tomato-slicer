@@ -26,6 +26,7 @@ import Hedgehog.Range qualified as Range
 import System.Clock (TimeSpec, toNanoSecs)
 import Test.Hspec (Spec, describe, it, shouldBe)
 import Test.Hspec.Hedgehog (hedgehog)
+import System.Statusbar.Pomodoro.Timer (timerStateText)
 
 spec :: Spec
 spec = describe "System.Statusbar.Timer.Timer" $ do
@@ -211,6 +212,17 @@ spec = describe "System.Statusbar.Timer.Timer" $ do
       remaining <-
         forAll $ Gen.remainingTimeInNanos (Range.linear 0 Gen.upperBoundNanos)
       resetTimer (TimerPaused remaining) === TimerReady
+
+  describe "timerStateText" $ do
+    it "returns expected text" $ hedgehog $ do
+      endTime <- forAll $ Gen.endTimeInNanos (Range.linear 0 Gen.upperBoundNanos)
+      remainingTime <- 
+        forAll $ Gen.remainingTimeInNanos (Range.linear 0 Gen.upperBoundNanos)
+
+      timerStateText TimerReady === "ready"
+      timerStateText TimerDone === "done"
+      timerStateText (TimerRunning endTime) === "running"
+      timerStateText (TimerPaused remainingTime) === "paused"
 
   describe "remainingDuration" $ do
     it "returns duration when timer is ready" $ hedgehog $ do
