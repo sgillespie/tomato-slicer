@@ -8,9 +8,12 @@ module System.Statusbar.Pomodoro.Waybar
 import System.Statusbar.Pomodoro.Timer
   ( CurrentTime (..),
     Duration (..),
+    EndTime (..),
+    RemainingTime (..),
     Timer (..),
     formatDuration,
-    remainingDuration, RemainingTime (..), EndTime (..), timeSpecToDiffTime,
+    remainingDuration,
+    timeSpecToDiffTime,
   )
 
 import Data.Aeson (KeyValue (..), ToJSON)
@@ -53,11 +56,10 @@ formatTimerState duration now timer
   | otherwise = formatDuration (remainingDuration duration now timer)
 
 timerTooltipText :: Duration -> CurrentTime -> Timer -> Text
-timerTooltipText duration _ TimerReady = 
+timerTooltipText duration _ TimerReady =
   "Ready (" <> formatDuration duration <> ")"
 timerTooltipText _ _ TimerDone = "Complete"
-timerTooltipText duration now timer@(TimerRunning _) = 
+timerTooltipText duration now timer@(TimerRunning _) =
   "Running: " <> formatDuration (remainingDuration duration now timer) <> " remaining"
-timerTooltipText duration now timer@(TimerPaused _) = 
+timerTooltipText duration now timer@(TimerPaused _) =
   "Paused: " <> formatDuration (remainingDuration duration now timer) <> " remaining"
-

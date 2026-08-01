@@ -22,10 +22,10 @@ import System.Statusbar.Pomodoro.Waybar
 import Control.Concurrent (threadDelay)
 import Data.Aeson qualified as Aeson
 import Data.Default (Default (..))
+import Data.Fixed (E12, Fixed (..), HasResolution (..), Pico)
 import Data.Time (diffTimeToPicoseconds, secondsToDiffTime)
 import System.Clock (Clock (..), getTime)
 import System.Posix (Handler (..), installHandler, sigUSR1, sigUSR2)
-import Data.Fixed (HasResolution(..), Pico, E12, Fixed (..))
 
 runTimer :: Word -> IO ()
 runTimer durationInSeconds = do
@@ -76,4 +76,3 @@ percentage duration now timer =
   where
     remaining = realToFrac $ getDuration (remainingDuration duration now timer)
     duration' = realToFrac (getDuration duration)
-    

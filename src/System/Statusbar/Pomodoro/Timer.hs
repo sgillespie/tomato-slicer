@@ -131,7 +131,7 @@ timerStateText :: Timer -> Text
 timerStateText TimerReady = "ready"
 timerStateText TimerDone = "done"
 timerStateText (TimerRunning _) = "running"
-timerStateText (TimerPaused _)= "paused"
+timerStateText (TimerPaused _) = "paused"
 
 -- | Calculate the time left on a 'Timer'
 remainingDuration :: Duration -> CurrentTime -> Timer -> Duration
