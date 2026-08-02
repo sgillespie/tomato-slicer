@@ -9,8 +9,14 @@
   "modules-right": [],
 
   "custom/tomato-slicer": {
-    "format": "󰔛 {text}",
-    "exec": "./result/bin/tomato-slicer",
+    "format": "{icon} {text}",
+    "format-icons": {
+      "ready": "󰚭",
+      "running": "󰔟",
+      "paused": "󱦠",
+      "done": "󱦟"
+    },
+    "exec": "./result/bin/tomato-slicer -d 10",
     "on-click": "pkill -SIGUSR1 -f tomato-slicer",
     "on-click-right": "pkill -SIGUSR2 -f tomato-slicer",
     "return-type": "json"
