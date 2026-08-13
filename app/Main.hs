@@ -3,9 +3,11 @@ module Main (main) where
 import Options.Applicative (Parser, ParserInfo)
 import Options.Applicative qualified as Options
 import System.Statusbar.Pomodoro (runTimer)
+import System.Statusbar.Pomodoro.Run (runDaemon)
 
 data Options = Options
-  { optDuration :: Word,
+  { optDaemon :: !Bool,
+    optDuration :: Word,
     optVerbose :: !Bool
   }
   deriving stock (Show)
@@ -16,7 +18,9 @@ main = do
   Options.execParser options >>= run
 
 run :: Options -> IO ()
-run Options {..} = runTimer optDuration
+run Options {..} 
+  | optDaemon = runDaemon
+  | otherwise = runTimer optDuration
 
 options :: ParserInfo Options
 options =
@@ -28,14 +32,23 @@ options =
 parser :: Parser Options
 parser =
   Options
-    <$> durationOpt
+    <$> daemonOpt
+    <*> durationOpt
     <*> verboseOpt
+
+daemonOpt :: Parser Bool
+daemonOpt =
+  Options.switch $
+    Options.long "daemon"
+      <> Options.short 'd'
+      <> Options.showDefault
+      <> Options.help "Start daemon in background"
 
 durationOpt :: Parser Word
 durationOpt =
   Options.option Options.auto $
     Options.long "duration"
-      <> Options.short 'd'
+      <> Options.short 's'
       <> Options.value 30
       <> Options.showDefault
       <> Options.metavar "SECONDS"

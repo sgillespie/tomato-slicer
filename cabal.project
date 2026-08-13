@@ -2,3 +2,7 @@ packages: ./*.cabal
 index-state: 2026-06-29T00:01:59Z
 tests: True
 test-show-details: direct
+
+allow-newer: 
+  -- Required for xdg-basedir-compliant
+  polysemy-zoo:*

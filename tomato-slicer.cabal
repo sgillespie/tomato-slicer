@@ -27,6 +27,7 @@ common common-options
   build-depends:
     base >=4.16 && <5,
     data-default,
+    extra,
     relude,
 
   mixins:
@@ -69,8 +70,10 @@ library
   build-depends:
     aeson,
     clock,
+    filepath,
     time,
     unix,
+    xdg-basedir-compliant,
 
 executable tomato-slicer
   import: common-options
