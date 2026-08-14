@@ -18,7 +18,7 @@ main = do
   Options.execParser options >>= run
 
 run :: Options -> IO ()
-run Options {..} 
+run Options {..}
   | optDaemon = runDaemon
   | otherwise = runTimer optDuration
 

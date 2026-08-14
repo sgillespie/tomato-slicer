@@ -22,17 +22,17 @@ import System.Statusbar.Pomodoro.Waybar
 
 import Control.Concurrent (threadDelay)
 import Control.Exception (bracket, finally)
+import Control.Monad.Extra (untilJustM)
 import Data.Aeson qualified as Aeson
 import Data.Bits ((.|.))
 import Data.Default (Default (..))
 import Data.Time (secondsToDiffTime)
 import System.Clock (Clock (..), getTime)
 import System.FilePath ((</>))
-import System.Posix (Handler (..), OpenFileFlags (..), OpenMode (..), changeWorkingDirectory, closeFd, createSession, defaultFileFlags, dupTo, forkProcess, getProcessID, installHandler, nullFileMode, openFd, ownerReadMode, ownerWriteMode, removeLink, setFileCreationMask, sigTERM, sigUSR1, sigUSR2, stdError, stdInput, stdOutput, Fd, emptySignalSet, addSignal, sigINT, sigQUIT, sigHUP, sigILL, sigTRAP)
+import System.Posix (Fd, Handler (..), OpenFileFlags (..), OpenMode (..), addSignal, changeWorkingDirectory, closeFd, createSession, defaultFileFlags, dupTo, emptySignalSet, forkProcess, getProcessID, installHandler, nullFileMode, openFd, ownerReadMode, ownerWriteMode, removeLink, setFileCreationMask, sigHUP, sigILL, sigINT, sigQUIT, sigTERM, sigTRAP, sigUSR1, sigUSR2, stdError, stdInput, stdOutput)
 import System.Posix.ByteString (fdWrite)
 import System.XDG (getRuntimeDir)
 import Prelude hiding (readFile)
-import Control.Monad.Extra (untilJustM)
 
 runDaemon :: IO ()
 runDaemon = do
@@ -42,7 +42,7 @@ runDaemon = do
   runBackground pidFile $ do
     done <- newIORef Nothing
     let doneHandler = writeIORef done (Just ())
-        quitSignals = 
+        quitSignals =
           [ sigHUP,
             sigINT,
             sigQUIT,
@@ -89,7 +89,7 @@ connectFd :: FilePath -> Fd -> IO ()
 connectFd srcPath destHandle =
   bracket
     (openFd srcPath ReadOnly defaultFileFlags)
-    (closeFd)
+    closeFd
     (\fd -> void $ dupTo fd destHandle)
 
 openFdNewExclusive :: FilePath -> OpenMode -> IO Fd

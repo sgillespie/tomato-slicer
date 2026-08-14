@@ -22,7 +22,7 @@ module System.Statusbar.Pomodoro
     WaybarOutput (..),
   ) where
 
-import System.Statusbar.Pomodoro.Run (runTimer, runDaemon)
+import System.Statusbar.Pomodoro.Run (runDaemon, runTimer)
 import System.Statusbar.Pomodoro.Timer
   ( CurrentTime (..),
     Duration (..),
