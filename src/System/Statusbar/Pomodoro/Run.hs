@@ -1,8 +1,11 @@
 module System.Statusbar.Pomodoro.Run
-  ( runDaemon,
+  ( runServer,
+    runStatus,
     runTimer,
   ) where
 
+import System.Statusbar.Pomodoro.Client (runStatus)
+import System.Statusbar.Pomodoro.Server qualified as Server
 import System.Statusbar.Pomodoro.Timer
   ( CurrentTime (..),
     Duration (..),
@@ -21,88 +24,15 @@ import System.Statusbar.Pomodoro.Waybar
   )
 
 import Control.Concurrent (threadDelay)
-import Control.Exception (bracket, finally)
-import Control.Monad.Extra (untilJustM)
 import Data.Aeson qualified as Aeson
-import Data.Bits ((.|.))
 import Data.Default (Default (..))
 import Data.Time (secondsToDiffTime)
 import System.Clock (Clock (..), getTime)
-import System.FilePath ((</>))
-import System.Posix (Fd, Handler (..), OpenFileFlags (..), OpenMode (..), addSignal, changeWorkingDirectory, closeFd, createSession, defaultFileFlags, dupTo, emptySignalSet, forkProcess, getProcessID, installHandler, nullFileMode, openFd, ownerReadMode, ownerWriteMode, removeLink, setFileCreationMask, sigHUP, sigILL, sigINT, sigQUIT, sigTERM, sigTRAP, sigUSR1, sigUSR2, stdError, stdInput, stdOutput)
-import System.Posix.ByteString (fdWrite)
-import System.XDG (getRuntimeDir)
+import System.Posix (Handler (..), installHandler, sigUSR1, sigUSR2)
 import Prelude hiding (readFile)
 
-runDaemon :: IO ()
-runDaemon = do
-  xdgRunDir <- getRuntimeDir
-  let pidFile = xdgRunDir </> "tomato-slicer.pid"
-
-  runBackground pidFile $ do
-    done <- newIORef Nothing
-    let doneHandler = writeIORef done (Just ())
-        quitSignals =
-          [ sigHUP,
-            sigINT,
-            sigQUIT,
-            sigILL,
-            sigTRAP,
-            sigTERM
-          ]
-    mapM_ (\s -> installHandler s (Catch doneHandler) Nothing) quitSignals
-
-    untilJustM $ do
-      done' <- readIORef done
-
-      maybe
-        (threadDelay 1_000_000)
-        (const $ cleanupPidFile pidFile)
-        done'
-
-      pure done'
-
-runBackground :: FilePath -> IO a -> IO ()
-runBackground pidFile action = do
-  -- Create pid file
-  fd <- openFdNewExclusive pidFile WriteOnly
-
-  -- Fork
-  void . forkProcess $ do
-    -- Setsid
-    _ <- createSession
-    -- Fork again
-    void . forkProcess $ do
-      -- Write the PID
-      daemonPid <- getProcessID
-      _ <- fdWrite fd (show daemonPid) `finally` closeFd fd
-      -- Remap std handles to /dev/null
-      mapM_ (connectFd "/dev/null") [stdInput, stdOutput, stdError]
-      -- Reset umask to 0
-      _ <- setFileCreationMask nullFileMode
-      -- Change pwd to /
-      changeWorkingDirectory "/"
-
-      void action
-
-connectFd :: FilePath -> Fd -> IO ()
-connectFd srcPath destHandle =
-  bracket
-    (openFd srcPath ReadOnly defaultFileFlags)
-    closeFd
-    (\fd -> void $ dupTo fd destHandle)
-
-openFdNewExclusive :: FilePath -> OpenMode -> IO Fd
-openFdNewExclusive file rwMode = openFd file rwMode flags
-  where
-    flags =
-      defaultFileFlags
-        { exclusive = True,
-          creat = Just (ownerReadMode .|. ownerWriteMode)
-        }
-
-cleanupPidFile :: FilePath -> IO ()
-cleanupPidFile = removeLink
+runServer :: IO ()
+runServer = Server.runServer 3600
 
 runTimer :: Word -> IO ()
 runTimer durationInSeconds = do

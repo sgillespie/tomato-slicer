@@ -15,14 +15,15 @@ module System.Statusbar.Pomodoro
     resetTimer,
 
     -- * Runner
-    runDaemon,
+    runServer,
+    runStatus,
     runTimer,
 
     -- * Waybar output
     WaybarOutput (..),
   ) where
 
-import System.Statusbar.Pomodoro.Run (runDaemon, runTimer)
+import System.Statusbar.Pomodoro.Run (runServer, runStatus, runTimer)
 import System.Statusbar.Pomodoro.Timer
   ( CurrentTime (..),
     Duration (..),

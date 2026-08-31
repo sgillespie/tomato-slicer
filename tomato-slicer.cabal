@@ -63,15 +63,22 @@ library
   hs-source-dirs: src
   exposed-modules:
     System.Statusbar.Pomodoro
+    System.Statusbar.Pomodoro.Protocol
+    System.Statusbar.Pomodoro.Client
     System.Statusbar.Pomodoro.Run
+    System.Statusbar.Pomodoro.Server
     System.Statusbar.Pomodoro.Timer
     System.Statusbar.Pomodoro.Waybar
 
   build-depends:
     aeson,
+    async,
     clock,
     filepath,
+    network, 
+    stm,
     time,
+    unliftio,
     unix,
     xdg-basedir-compliant,
 

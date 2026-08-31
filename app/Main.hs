@@ -2,28 +2,39 @@ module Main (main) where
 
 import Options.Applicative (Parser, ParserInfo)
 import Options.Applicative qualified as Options
-import System.Statusbar.Pomodoro (runTimer)
-import System.Statusbar.Pomodoro.Run (runDaemon)
+import System.Statusbar.Pomodoro (runServer, runStatus)
 
 data Options = Options
-  { optDaemon :: !Bool,
-    optDuration :: Word,
+  { optCommand :: !Command,
     optVerbose :: !Bool
   }
   deriving stock (Show)
 
+data Command
+  = Serve ServeOptions
+  | Status StatusOptions
+  deriving stock (Eq, Ord, Show)
+
+newtype ServeOptions = ServeOptions
+  { optDuration :: Word
+  }
+  deriving stock (Eq, Ord, Show)
+
+data StatusOptions = StatusOptions
+  deriving stock (Eq, Ord, Show)
+
 main :: IO ()
 main = do
   hSetBuffering stdout LineBuffering
-  Options.execParser options >>= run
+  Options.execParser globalOptions >>= run
 
 run :: Options -> IO ()
-run Options {..}
-  | optDaemon = runDaemon
-  | otherwise = runTimer optDuration
+run Options {optCommand}
+  | Serve {} <- optCommand = runServer
+  | Status {} <- optCommand = runStatus
 
-options :: ParserInfo Options
-options =
+globalOptions :: ParserInfo Options
+globalOptions =
   Options.info (parser <**> Options.helper) $
     Options.fullDesc
       <> Options.progDesc "A tomato timer for JSON-speaking status bars"
@@ -32,17 +43,31 @@ options =
 parser :: Parser Options
 parser =
   Options
-    <$> daemonOpt
-    <*> durationOpt
+    <$> commandParser
     <*> verboseOpt
 
-daemonOpt :: Parser Bool
-daemonOpt =
+verboseOpt :: Parser Bool
+verboseOpt =
   Options.switch $
-    Options.long "daemon"
-      <> Options.short 'd'
-      <> Options.showDefault
-      <> Options.help "Start daemon in background"
+    Options.long "verbose"
+      <> Options.short 'v'
+      <> Options.help "Verbose output?"
+
+commandParser :: Parser Command
+commandParser =
+  Options.hsubparser $
+    Options.command "serve" serveCommandOptions
+      <> Options.command "status" statusCommandOptions
+
+serveCommandOptions :: ParserInfo Command
+serveCommandOptions = Options.info (Serve <$> serveCommandParser) serveCommandInfo
+  where
+    serveCommandInfo = Options.progDesc "Run the timer server in the foreground"
+
+serveCommandParser :: Parser ServeOptions
+serveCommandParser =
+  ServeOptions
+    <$> durationOpt
 
 durationOpt :: Parser Word
 durationOpt =
@@ -54,9 +79,8 @@ durationOpt =
       <> Options.metavar "SECONDS"
       <> Options.help "Duration of the timer in seconds"
 
-verboseOpt :: Parser Bool
-verboseOpt =
-  Options.switch $
-    Options.long "verbose"
-      <> Options.short 'v'
-      <> Options.help "Verbose output?"
+statusCommandOptions :: ParserInfo Command
+statusCommandOptions = Options.info statusCommandParser statusCommandInfo
+  where
+    statusCommandParser = pure $ Status StatusOptions
+    statusCommandInfo = Options.progDesc "Show the current timer status"

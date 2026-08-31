@@ -48,21 +48,28 @@ module System.Statusbar.Pomodoro.Timer
 import Data.Time (DiffTime, FormatTime, diffTimeToPicoseconds, picosecondsToDiffTime)
 import Data.Time qualified as Time
 import System.Clock (TimeSpec, fromNanoSecs, toNanoSecs)
+import Data.Aeson (FromJSON, ToJSON)
 
 -- | The recorded current time, represented by 'TimeSpec'
 newtype CurrentTime = CurrentTime {getCurrentTime :: TimeSpec}
-  deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Generic, Ord, Show)
+  deriving newtype (ToJSON, FromJSON)
 
 -- | The end time of a timer, represented by 'TimeSpec'
 newtype EndTime = EndTime {getEndTime :: TimeSpec}
-  deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Generic, Ord, Show)
+  deriving newtype (ToJSON, FromJSON)
 
 newtype RemainingTime = RemainingTime {getRemainingTime :: TimeSpec}
-  deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Generic, Ord, Show)
+  deriving newtype (ToJSON, FromJSON)
 
 newtype Duration = Duration {getDuration :: DiffTime}
-  deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Generic, Ord, Show)
   deriving newtype (FormatTime, Num)
+
+deriving instance ToJSON TimeSpec
+deriving instance FromJSON TimeSpec
 
 -- | Timer state: indicates whether it is running
 data Timer
