@@ -18,10 +18,10 @@ import Data.ByteString qualified as ByteString
 import Network.Socket (Family (..), SockAddr (..), Socket, SocketType (..), accept, bind, close, defaultProtocol, gracefulClose, listen, setCloseOnExecIfNeeded, socket, withFdSocket)
 import Network.Socket.ByteString (recv, sendAll)
 import System.FilePath ((</>))
+import System.Statusbar.Pomodoro.Error (ServerError (..))
 import System.XDG (getRuntimeDir)
-import UnliftIO (MonadUnliftIO (..), bracket, bracketOnError, mapConcurrently_, throwIO, catches, Handler (..))
+import UnliftIO (Handler (..), MonadUnliftIO (..), bracket, bracketOnError, catches, mapConcurrently_, throwIO)
 import UnliftIO.Concurrent (forkFinally)
-import System.Statusbar.Pomodoro.Error (ServerError(..))
 
 data ServerEnv = ServerEnv
   { commands :: TBQueue (),
@@ -61,7 +61,7 @@ runSock = do
   bracket
     (liftIO $ openSock sockFile)
     (liftIO . close)
-    loopServer
+    (fmap absurd . loopServer)
   where
     openSock sockFile =
       bracketOnError (socket AF_UNIX Stream defaultProtocol) close $ \sock -> do
@@ -70,9 +70,9 @@ runSock = do
         listen sock 1024
         pure sock
 
-    loopServer :: Socket -> ServerT a
+    loopServer :: Socket -> ServerT Void
     loopServer sock = do
-      forever $
+      infinitely $
         bracketOnError (liftIO $ accept sock) (liftIO . close . fst) $ \(conn, _) ->
           forkFinally (handleConn conn) (const $ liftIO $ gracefulClose conn 5000)
 
@@ -83,15 +83,14 @@ runSock = do
       putStrLn $ "Received request: " <> show msg
 
       unless (ByteString.null msg) $ do
-        resp <- 
+        resp <-
           handleMsg msg
-            `catches`
-              [ Handler $ \(err :: ServerError) -> do
-                  liftIO $ putStrLn $ "Could not handle request: " <> show err
-                  pure $ toStrict $ Aeson.encode $ handleErr err,
-                Handler $ \(_ :: SomeException) -> 
-                  throwIO $ ServerUnexpectedError
-              ]
+            `catches` [ Handler $ \(err :: ServerError) -> do
+                          liftIO $ putStrLn $ "Could not handle request: " <> show err
+                          pure $ toStrict $ Aeson.encode $ handleErr err,
+                        Handler $ \(_ :: SomeException) ->
+                          throwIO ServerUnexpectedError
+                      ]
         putStrLn $ "Sending response: " <> show resp
         liftIO $ sendAll conn resp
 
@@ -135,7 +134,7 @@ handleErr err =
     }
 
 runTimer :: ServerT ()
-runTimer = pure ()
+runTimer = pass
 
 -- 1. Launch async threads
 --    - Server (synchronous)

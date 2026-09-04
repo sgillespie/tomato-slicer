@@ -63,9 +63,9 @@ library
   hs-source-dirs: src
   exposed-modules:
     System.Statusbar.Pomodoro
+    System.Statusbar.Pomodoro.Client
     System.Statusbar.Pomodoro.Error
     System.Statusbar.Pomodoro.Protocol
-    System.Statusbar.Pomodoro.Client
     System.Statusbar.Pomodoro.Run
     System.Statusbar.Pomodoro.Server
     System.Statusbar.Pomodoro.Timer
@@ -76,11 +76,11 @@ library
     async,
     clock,
     filepath,
-    network, 
+    network,
     stm,
     time,
-    unliftio,
     unix,
+    unliftio,
     xdg-basedir-compliant,
 
 executable tomato-slicer

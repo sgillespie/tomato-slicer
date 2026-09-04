@@ -49,7 +49,7 @@ data Resp ext = Resp
   { -- | Protocol version: must match 'Req.reqVersion'
     respVersion :: ProtoVersion,
     -- | Client-generated correlation ID, if available
-    respId :: Maybe (RequestId),
+    respId :: Maybe RequestId,
     -- | Response status indicating overall success or error
     respStatus :: RespStatus,
     respData :: ext
@@ -58,9 +58,11 @@ data Resp ext = Resp
   deriving anyclass (FromJSON, ToJSON)
 
 -- | Status of the response, can either be a success or error
-data RespStatus 
-  = OK    -- ^ Successful response
-  | Error -- ^ Error result
+data RespStatus
+  = -- | Successful response
+    OK
+  | -- | Error result
+    Error
   deriving stock (Eq, Generic, Ord, Show)
   deriving anyclass (ToJSON, FromJSON)
 
@@ -85,14 +87,14 @@ data StatusResponse = StatusResponse
 -- | Enumeration of possible timer states, encoded in 'statusRespState' field of
 -- 'StatusResponse'
 data RespTimerState
-  -- | Stopped and ready to be started
-  = RespStateReady
-  -- | Expired
-  | RespStateDone
-  -- | Currently running
-  | RespStateRunning
-  -- | Running but paused
-  | RespStatePaused
+  = -- | Stopped and ready to be started
+    RespStateReady
+  | -- | Expired
+    RespStateDone
+  | -- | Currently running
+    RespStateRunning
+  | -- | Running but paused
+    RespStatePaused
   deriving stock (Eq, Enum, Generic, Ord, Show)
   deriving anyclass (FromJSON, ToJSON)
 

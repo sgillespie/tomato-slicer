@@ -45,10 +45,10 @@ module System.Statusbar.Pomodoro.Timer
     timeSpecToDiffTime,
   ) where
 
+import Data.Aeson (FromJSON, ToJSON)
 import Data.Time (DiffTime, FormatTime, diffTimeToPicoseconds, picosecondsToDiffTime)
 import Data.Time qualified as Time
 import System.Clock (TimeSpec, fromNanoSecs, toNanoSecs)
-import Data.Aeson (FromJSON, ToJSON)
 
 -- | The recorded current time, represented by 'TimeSpec'
 newtype CurrentTime = CurrentTime {getCurrentTime :: TimeSpec}
