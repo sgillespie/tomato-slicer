@@ -18,10 +18,10 @@ import Data.ByteString qualified as ByteString
 import Network.Socket (Family (..), SockAddr (..), Socket, SocketType (..), accept, bind, close, defaultProtocol, gracefulClose, listen, setCloseOnExecIfNeeded, socket, withFdSocket)
 import Network.Socket.ByteString (recv, sendAll)
 import System.FilePath ((</>))
-import System.IO.Error (userError)
 import System.XDG (getRuntimeDir)
-import UnliftIO (MonadUnliftIO (..), bracket, bracketOnError, mapConcurrently_, throwIO, try)
+import UnliftIO (MonadUnliftIO (..), bracket, bracketOnError, mapConcurrently_, throwIO, catches, Handler (..))
 import UnliftIO.Concurrent (forkFinally)
+import System.Statusbar.Pomodoro.Error (ServerError(..))
 
 data ServerEnv = ServerEnv
   { commands :: TBQueue (),
@@ -83,14 +83,17 @@ runSock = do
       putStrLn $ "Received request: " <> show msg
 
       unless (ByteString.null msg) $ do
-        resp <- try (handleMsg msg)
-        case resp of
-          Left (err :: SomeException) -> do
-            putStrLn $ "Could not handle request: " <> show err
-            liftIO $ sendAll conn . toStrict . Aeson.encode $ handleErr err
-          Right res -> do
-            putStrLn $ "Sending response: " <> show resp
-            liftIO $ sendAll conn res
+        resp <- 
+          handleMsg msg
+            `catches`
+              [ Handler $ \(err :: ServerError) -> do
+                  liftIO $ putStrLn $ "Could not handle request: " <> show err
+                  pure $ toStrict $ Aeson.encode $ handleErr err,
+                Handler $ \(_ :: SomeException) -> 
+                  throwIO $ ServerUnexpectedError
+              ]
+        putStrLn $ "Sending response: " <> show resp
+        liftIO $ sendAll conn resp
 
         handleConn conn
 
@@ -101,9 +104,7 @@ runSock = do
       -- If successful, continue. Otherwise, throw an error and return to the server loop
       resp <-
         case parsed of
-          Left err -> do
-            putStrLn $ "Cannot parse message: " <> err
-            throwIO $ userError err
+          Left err -> throwIO $ JsonParseError (toText err)
           Right res -> pure $ Aeson.encode (handleReq res)
 
       pure $ toStrict resp
@@ -121,7 +122,7 @@ handleReq Req {reqCommand = Protocol.ReqStatus} =
           }
     }
 
-handleErr :: (Exception e) => e -> Resp ErrorResponse
+handleErr :: ServerError -> Resp ErrorResponse
 handleErr err =
   Resp
     { respVersion = Protocol.ProtoVersion 1,

@@ -63,6 +63,7 @@ library
   hs-source-dirs: src
   exposed-modules:
     System.Statusbar.Pomodoro
+    System.Statusbar.Pomodoro.Error
     System.Statusbar.Pomodoro.Protocol
     System.Statusbar.Pomodoro.Client
     System.Statusbar.Pomodoro.Run
