@@ -14,16 +14,31 @@ module System.Statusbar.Pomodoro
     toggleRunningTimer,
     resetTimer,
 
-    -- * Runner
+    -- * Server interface
+    ServerEnv (..),
+    ServerT (..),
+    ServerError (..),
+    runServerT,
+
+    -- * Client interface types
+    ClientError (..),
+
+    -- * Runners
     runServer,
     runStatus,
-    runTimer,
 
     -- * Waybar output
     WaybarOutput (..),
   ) where
 
-import System.Statusbar.Pomodoro.Run (runServer, runStatus, runTimer)
+import System.Statusbar.Pomodoro.Client (runStatus)
+import System.Statusbar.Pomodoro.Error (ClientError (..), ServerError (..))
+import System.Statusbar.Pomodoro.Server
+  ( ServerEnv (..),
+    ServerT (..),
+    runServer,
+    runServerT,
+  )
 import System.Statusbar.Pomodoro.Timer
   ( CurrentTime (..),
     Duration (..),

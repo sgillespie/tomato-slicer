@@ -45,7 +45,9 @@ module System.Statusbar.Pomodoro.Timer
     timeSpecToDiffTime,
   ) where
 
-import Data.Aeson (FromJSON, ToJSON)
+import Data.Aeson (FromJSON (..), ToJSON (..))
+import Data.Aeson qualified as Aeson
+import Data.Aeson.Encoding qualified as Aeson
 import Data.Time (DiffTime, FormatTime, diffTimeToPicoseconds, picosecondsToDiffTime)
 import Data.Time qualified as Time
 import System.Clock (TimeSpec, fromNanoSecs, toNanoSecs)
@@ -68,8 +70,15 @@ newtype Duration = Duration {getDuration :: DiffTime}
   deriving stock (Eq, Generic, Ord, Show)
   deriving newtype (FormatTime, Num)
 
-deriving instance ToJSON TimeSpec
-deriving instance FromJSON TimeSpec
+instance ToJSON Duration where
+  toEncoding = Aeson.text . formatDuration
+  toJSON = toJSON . formatDuration
+
+instance FromJSON Duration where
+  parseJSON = Aeson.withText "Duration" parseDuration
+
+deriving anyclass instance ToJSON TimeSpec
+deriving anyclass instance FromJSON TimeSpec
 
 -- | Timer state: indicates whether it is running
 data Timer
@@ -152,6 +161,12 @@ remainingDuration _ (CurrentTime now) (TimerRunning (EndTime end)) =
 -- | Format the time in the form "MM:SS"
 formatDuration :: Duration -> Text
 formatDuration = toText . Time.formatTime Time.defaultTimeLocale "%0M:%0S"
+
+parseDuration :: (MonadFail m) => Text -> m Duration
+parseDuration =
+  fmap Duration
+    . Time.parseTimeM False Time.defaultTimeLocale "%0M:%0S"
+    . toString
 
 -- | Transform a 'DiffTime' to 'TimeSpec'
 diffTimeToTimeSpec :: DiffTime -> TimeSpec

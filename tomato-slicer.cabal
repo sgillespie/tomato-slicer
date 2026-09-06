@@ -26,6 +26,7 @@ source-repository head
 common common-options
   build-depends:
     base >=4.16 && <5,
+    aeson,
     data-default,
     extra,
     relude,
@@ -66,7 +67,6 @@ library
     System.Statusbar.Pomodoro.Client
     System.Statusbar.Pomodoro.Error
     System.Statusbar.Pomodoro.Protocol
-    System.Statusbar.Pomodoro.Run
     System.Statusbar.Pomodoro.Server
     System.Statusbar.Pomodoro.Timer
     System.Statusbar.Pomodoro.Waybar
@@ -103,6 +103,7 @@ test-suite tests
   main-is: Main.hs
   other-modules:
     System.Statusbar.Pomodoro.Gen
+    System.Statusbar.Pomodoro.ProtocolTest
     System.Statusbar.Pomodoro.TimerTest
 
   build-depends:

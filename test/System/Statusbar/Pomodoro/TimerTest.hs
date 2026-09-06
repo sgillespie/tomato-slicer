@@ -20,6 +20,7 @@ import System.Statusbar.Pomodoro.Timer
     toggleRunningTimer,
   )
 
+import Data.Aeson qualified as Aeson
 import Data.Text qualified as Text
 import Data.Time.Clock (DiffTime, picosecondsToDiffTime)
 import Hedgehog (annotateShow, failure, forAll, tripping, (===))
@@ -29,7 +30,35 @@ import Test.Hspec (Spec, describe, it, shouldBe)
 import Test.Hspec.Hedgehog (hedgehog)
 
 spec :: Spec
-spec = describe "System.Statusbar.Timer.Timer" $ do
+spec = describe "System.Statusbar.Pomodoro.Timer" $ do
+  describe "CurrentTime" $
+    it "round-trips through Aeson" $
+      hedgehog $ do
+        let rangeNanos = Range.linear 0 Gen.upperBoundNanos
+        now <- forAll (Gen.currentTimeInNanos rangeNanos)
+        tripping now Aeson.encode Aeson.eitherDecode
+
+  describe "EndTime" $
+    it "round-trips through Aeson" $
+      hedgehog $ do
+        let rangeNanos = Range.linear 0 Gen.upperBoundNanos
+        end <- forAll (Gen.endTimeInNanos rangeNanos)
+        tripping end Aeson.encode Aeson.eitherDecode
+
+  describe "RemainingTime" $
+    it "round-trips through Aeson" $
+      hedgehog $ do
+        let rangeNanos = Range.linear 0 Gen.upperBoundNanos
+        remaining <- forAll (Gen.remainingTimeInNanos rangeNanos)
+        tripping remaining Aeson.encode Aeson.eitherDecode
+
+  describe "Duration" $
+    it "round-trips through Aeson" $
+      hedgehog $ do
+        let rangeSecs = Range.linear 0 Gen.upperBoundSecs
+        duration <- forAll (Gen.durationInSecs rangeSecs)
+        tripping duration Aeson.encode Aeson.eitherDecode
+
   describe "newTimer" $ do
     it "sets state to ready" $
       newTimer `shouldBe` TimerReady

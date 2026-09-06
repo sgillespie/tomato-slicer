@@ -13,7 +13,7 @@ module System.Statusbar.Pomodoro.Protocol
 
 import Data.Aeson (ToJSON)
 import Data.Aeson.Types (FromJSON)
-import System.Statusbar.Pomodoro.Timer (RemainingTime)
+import System.Statusbar.Pomodoro.Timer (Duration)
 
 -- | Protocol version ('1'), used to detect incompatible Server/Client interactions
 newtype ProtoVersion = ProtoVersion {unProtoVersion :: Word}
@@ -79,7 +79,7 @@ data StatusResponse = StatusResponse
   { -- | The timer running state
     statusRespState :: RespTimerState,
     -- | The amount of time running on the currently running timer
-    statusRespTime :: RemainingTime
+    statusRespTime :: Duration
   }
   deriving stock (Eq, Generic, Ord, Show)
   deriving anyclass (FromJSON, ToJSON)
@@ -99,4 +99,4 @@ data RespTimerState
   deriving anyclass (FromJSON, ToJSON)
 
 -- | A request handler
-type ReqHandler req resp = Req req -> Resp resp
+type ReqHandler m req resp = Req req -> m (Resp resp)

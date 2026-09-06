@@ -30,7 +30,7 @@ main = do
 
 run :: Options -> IO ()
 run Options {optCommand}
-  | Serve {} <- optCommand = runServer
+  | Serve (ServeOptions{optDuration}) <- optCommand = runServer optDuration
   | Status {} <- optCommand = runStatus
 
 globalOptions :: ParserInfo Options

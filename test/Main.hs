@@ -1,5 +1,6 @@
 module Main (main) where
 
+import System.Statusbar.Pomodoro.ProtocolTest qualified as ProtocolTest
 import System.Statusbar.Pomodoro.TimerTest qualified as TimerTest
 
 import Test.Hspec
@@ -8,4 +9,6 @@ main :: IO ()
 main = hspec spec
 
 spec :: Spec
-spec = describe "tomato-slicer" TimerTest.spec
+spec = describe "tomato-slicer" $ do
+  TimerTest.spec
+  ProtocolTest.spec

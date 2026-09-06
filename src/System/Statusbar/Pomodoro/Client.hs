@@ -9,6 +9,7 @@ import System.FilePath ((</>))
 import System.Statusbar.Pomodoro.Protocol qualified as Protocol
 import System.XDG (getRuntimeDir)
 import UnliftIO (bracketOnError)
+import qualified Data.Text.IO as Text
 
 runStatus :: IO ()
 runStatus = do
@@ -27,4 +28,4 @@ runStatus = do
               reqCommand = Protocol.ReqStatus
             }
     msg <- recv sock 1024
-    putStrLn $ "Received msg: " <> show msg
+    Text.hPutStrLn stderr $ "Received msg: '" <> decodeUtf8 msg <> "'"
