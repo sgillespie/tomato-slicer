@@ -1,8 +1,9 @@
 module Main (main) where
 
+import System.Statusbar.Pomodoro (runServer, runStatus)
+
 import Options.Applicative (Parser, ParserInfo)
 import Options.Applicative qualified as Options
-import System.Statusbar.Pomodoro (runServer, runStatus)
 
 data Options = Options
   { optCommand :: !Command,
@@ -30,7 +31,7 @@ main = do
 
 run :: Options -> IO ()
 run Options {optCommand}
-  | Serve (ServeOptions{optDuration}) <- optCommand = runServer optDuration
+  | Serve (ServeOptions {optDuration}) <- optCommand = runServer optDuration
   | Status {} <- optCommand = runStatus
 
 globalOptions :: ParserInfo Options

@@ -20,29 +20,30 @@ import System.Statusbar.Pomodoro.Protocol qualified as Protocol
 import System.Statusbar.Pomodoro.Timer (CurrentTime, Duration, Timer)
 import System.Statusbar.Pomodoro.Timer qualified as Timer
 
-import Control.Concurrent.STM (TBQueue, newTBQueueIO)
+import Control.Concurrent.STM (TBQueue, newTBQueueIO, retry, tryReadTBQueue)
 import Data.Aeson qualified as Aeson
 import Data.ByteString qualified as ByteString
 import Data.Default (Default (..))
 import Data.Text.IO qualified as Text
 import Data.Time (secondsToDiffTime)
-import Network.Socket (Family (..), SockAddr (..), Socket, SocketType (..), accept, bind, close, defaultProtocol, gracefulClose, listen, setCloseOnExecIfNeeded, socket, withFdSocket)
+import Network.Socket (Socket)
+import Network.Socket qualified as Socket
 import Network.Socket.ByteString (recv, sendAll)
 import System.Clock (Clock (..), getTime)
 import System.FilePath ((</>))
 import System.Statusbar.Pomodoro.Error (ServerError (..))
 import System.Statusbar.Pomodoro.Waybar (WaybarOutput (..), formatTimerState, timerTooltipText)
 import System.XDG (getRuntimeDir)
-import UnliftIO (Handler (..), MonadUnliftIO (..), bracket, bracketOnError, catches, flushTBQueue, mapConcurrently_, throwIO, writeTBQueue)
-import UnliftIO.Concurrent (forkFinally, threadDelay)
+import UnliftIO (MonadUnliftIO)
+import UnliftIO qualified
+import UnliftIO.Concurrent (forkFinally)
 
 data ServerEnv = ServerEnv
   { commands :: TBQueue Command,
     durationInSeconds :: Word
   }
 
-data Command
-  = QueryStatus (TMVar Timer)
+newtype Command = QueryStatus (TMVar Timer)
 
 newtype ServerT a = ServerT {unServerT :: ReaderT ServerEnv IO a}
   deriving newtype
@@ -67,32 +68,40 @@ runServer durationInSeconds = do
           }
 
   runServerT env $
-    mapConcurrently_ id [runSock, runTimer]
+    UnliftIO.mapConcurrently_ id [runSock, runTimer]
 
 runSock :: ServerT ()
 runSock = do
   xdgRunDir <- liftIO getRuntimeDir
   let sockFile = xdgRunDir </> "tomato-slicer.socket"
 
-  bracket
+  UnliftIO.bracket
     (liftIO $ openSock sockFile)
-    (liftIO . close)
+    (liftIO . Socket.close)
     (void . loopServer)
   where
+    openSock :: FilePath -> IO Socket
     openSock sockFile =
-      bracketOnError (socket AF_UNIX Stream defaultProtocol) close $ \sock -> do
-        withFdSocket sock setCloseOnExecIfNeeded
-        bind sock (SockAddrUnix sockFile)
-        listen sock 1024
+      UnliftIO.bracketOnError mkSock Socket.close $ \sock -> do
+        Socket.withFdSocket sock Socket.setCloseOnExecIfNeeded
+        Socket.bind sock (Socket.SockAddrUnix sockFile)
+        Socket.listen sock 1024
 
         Text.hPutStrLn stderr $ "Server listening on unix://" <> toText sockFile
         pure sock
 
+    mkSock :: IO Socket
+    mkSock = Socket.socket Socket.AF_UNIX Socket.Stream Socket.defaultProtocol
+
     loopServer :: Socket -> ServerT Void
     loopServer sock = do
+      let accept' = liftIO . Socket.accept
+          close' = liftIO . Socket.close
+          gracefulClose' = liftIO . flip Socket.gracefulClose 5000
+
       infinitely $
-        bracketOnError (liftIO $ accept sock) (liftIO . close . fst) $ \(conn, _) ->
-          forkFinally (handleConn conn) (const $ liftIO $ gracefulClose conn 5000)
+        UnliftIO.bracketOnError (accept' sock) (close' . fst) $ \(conn, _) ->
+          forkFinally (handleConn conn) (const $ gracefulClose' conn)
 
     handleConn :: Socket -> ServerT ()
     handleConn conn = do
@@ -104,13 +113,14 @@ runSock = do
           "Received request: '" <> decodeUtf8 msg <> "'"
 
         resp <-
-          handleMsg msg
-            `catches` [ Handler $ \(err :: ServerError) -> do
-                          liftIO $ putStrLn $ "Could not handle request: " <> show err
-                          pure $ toStrict $ Aeson.encode $ handleErr err,
-                        Handler $ \(_ :: SomeException) ->
-                          throwIO ServerUnexpectedError
-                      ]
+          UnliftIO.catches
+            (handleMsg msg)
+            [ UnliftIO.Handler $ \(err :: ServerError) -> do
+                liftIO . Text.hPutStrLn stderr $ "Could not handle request: " <> show err
+                pure . toStrict . Aeson.encode $ handleErr err,
+              UnliftIO.Handler $ \(_ :: SomeException) ->
+                UnliftIO.throwIO ServerUnexpectedError
+            ]
 
         liftIO $ Text.hPutStrLn stderr ("Sending response: '" <> decodeUtf8 resp <> "'")
         liftIO $ sendAll conn resp
@@ -124,7 +134,7 @@ runSock = do
       -- If successful, continue. Otherwise, throw an error and return to the server loop
       resp <-
         case parsed of
-          Left err -> throwIO $ JsonParseError (toText err)
+          Left err -> UnliftIO.throwIO $ JsonParseError (toText err)
           Right res -> Aeson.encode <$> handleReq res
 
       pure $ toStrict resp
@@ -137,7 +147,7 @@ handleReq Protocol.Req {reqCommand = Protocol.ReqStatus} = do
   queue <- asks commands
   var <- atomically $ do
     var <- newEmptyTMVar
-    writeTBQueue queue (QueryStatus var)
+    UnliftIO.writeTBQueue queue (QueryStatus var)
     pure var
   -- Wait for the result
   timer <- atomically $ readTMVar var
@@ -154,7 +164,7 @@ handleReq Protocol.Req {reqCommand = Protocol.ReqStatus} = do
   where
     toStatusResponse :: CurrentTime -> Timer -> ServerT StatusResponse
     toStatusResponse now timer = do
-      ServerEnv{..} <- ask
+      ServerEnv {..} <- ask
       let duration = Timer.Duration $ secondsToDiffTime (fromIntegral durationInSeconds)
 
       pure $
@@ -195,13 +205,36 @@ runTimer = do
     timer <- updateTimer timerRef (Timer.tickTimer now)
     printTimerState barOut duration now timer
 
-    -- TODO[sgillespie]: Handle messages asynchronously so it can respond within 100ms
-    -- Handle queued message
-    atomically $ do
-      cmds <- flushTBQueue commands
-      forM_ cmds $ \(QueryStatus var) -> tryPutTMVar var timer
+    untilDelay 1_000_000 $ runMaybeT $ do
+      (QueryStatus var) <- MaybeT $ tryReadTBQueue commands
+      lift . void $ tryPutTMVar var timer
 
-    threadDelay 1_000_000
+-- | Repeatedly run an STM action until the delay has expired.
+--
+-- DO NOT run any blocking STM actions, as they may continue to block after the delay
+-- has passed. Instead, use the `tryX` class of non-blocking STM actions. This function
+-- handles the result and retries if necessary.
+untilDelay :: (MonadIO io) => Int -> STM (Maybe a) -> io ()
+untilDelay delay action = do
+  -- Store the delay expiry state
+  timeout <- UnliftIO.registerDelay delay
+
+  expired <- atomically $ do
+    -- Run the STM action
+    action >>= \case
+      -- It was successful, commit the transaction and return the expiry state
+      Just _ -> readTVar timeout
+      -- It was unsuccessful; If the delay has expired, commit the transaction, otherwise
+      -- retry.
+      Nothing ->
+        readTVar timeout >>= \case
+          -- Timeout has expired--commit the transaction with expired state
+          True -> pure True
+          False -> retry
+
+  -- If the timeout expired, exit; otherwise, loop again.
+  unless expired $
+    untilDelay delay action
 
 updateTimer :: (MonadIO io) => IORef Timer -> (Timer -> Timer) -> io Timer
 updateTimer timerRef advance = do

@@ -2,14 +2,15 @@ module System.Statusbar.Pomodoro.Client
   ( runStatus,
   ) where
 
+import System.Statusbar.Pomodoro.Protocol qualified as Protocol
+
 import Data.Aeson qualified as Aeson
+import Data.Text.IO qualified as Text
 import Network.Socket qualified as Network
 import Network.Socket.ByteString (recv, sendAll)
 import System.FilePath ((</>))
-import System.Statusbar.Pomodoro.Protocol qualified as Protocol
 import System.XDG (getRuntimeDir)
 import UnliftIO (bracketOnError)
-import qualified Data.Text.IO as Text
 
 runStatus :: IO ()
 runStatus = do
