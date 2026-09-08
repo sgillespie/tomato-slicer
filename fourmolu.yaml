@@ -1,4 +1,5 @@
 indentation: 2
+column-limit: 90
 function-arrows: leading
 comma-style: trailing
 import-export-style: trailing
